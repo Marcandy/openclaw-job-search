@@ -1,0 +1,24 @@
+# Personal data — never commit
+openclaw-application-log.csv
+openclaw-tri-city-state.json
+openclaw-applicant-brief.txt
+*.resume.pdf
+resume.pdf
+
+# Daily run artifacts
+leads-*.json
+candidates-*.json
+triage-*.json
+verify-*.json
+ashby-*.json
+*.exitcode
+*.run.json
+*.stdout.log
+*.stderr.log
+openclaw-runtime-logs/
+
+# Runtime
+node_modules/
+discovery/.venv/
+__pycache__/
+.DS_Store
