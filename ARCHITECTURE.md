@@ -49,10 +49,13 @@ prose is a suggestion."*
 
 ### 4. Submission — commodity layer (currently Kimi + InAppBrowser)
 
-An agent drives a real browser through Ashby / Greenhouse / Lever / Gem forms using
-the approved facts in `openclaw-applicant-brief.txt`, captures a visible receipt
+An agent drives a real browser through Ashby / Greenhouse / Lever / Gem /
+Rippling ATS / Hireology forms using the approved facts in
+`openclaw-applicant-brief.txt`, captures a visible receipt
 (`openclaw-runtime-logs/receipt-*.png`), and logs the row. Swappable — see
-`SWAPPABLE_PARTS.md`.
+`SWAPPABLE_PARTS.md`. The per-ATS interaction routines (dropdown timing,
+upload verification, submit quirks, block-and-substitute policy) are
+codified in `docs/FORM_FILL_PLAYBOOK.md`.
 
 ### 5. Ledger & audit — custom
 
