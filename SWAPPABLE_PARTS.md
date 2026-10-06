@@ -24,6 +24,13 @@ blocker rules (never invent education, decline AI-consent/arbitration), and the
 receipt requirement. Any external filler must be constrained by these or it will
 hallucinate answers — that is the main risk of swapping.
 
+**Measured note (Oct 2026 runs):** before swapping, port
+`docs/FORM_FILL_PLAYBOOK.md` into the new driver. The current layer converts
+~80% of Ashby forms and handled Greenhouse/Lever/Rippling/Hireology cleanly
+once the routines in the playbook were followed; the playbook IS the
+institutional knowledge a replacement would otherwise have to relearn by
+failing real submissions.
+
 ---
 
 ## 2. Job discovery — already borrowed, could be widened
