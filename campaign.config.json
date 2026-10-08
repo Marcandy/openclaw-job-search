@@ -781,7 +781,7 @@
     "evaluation"
   ],
   "paths": {
-    "resume": ".\\Marc-Andy_Resume_Principal_Engineer.pdf",
+    "resume": ".\\resumes\\Marc-Andy_Resume_Principal_Engineer.pdf",
     "ledgerCsv": ".\\openclaw-application-log.csv",
     "state": ".\\openclaw-tri-city-state.json",
     "poolReportDir": ".",
@@ -789,6 +789,31 @@
     "openclawMediaInbound": "~/.openclaw\\media\\inbound",
     "jobsyncStarter": ".\\integrations\\jobsync\\start-jobsync.ps1",
     "jobsyncDashboard": "http://127.0.0.1:3737"
+  },
+  "resumeRouting": {
+    "note": "Added 2026-10-08 from recruiter-event feedback: submit the resume variant that matches the role's primary stack instead of one generic resume for everything. Rules are evaluated in order; the first rule whose keywords appear in the posted title or description wins. Matching is case-insensitive on word boundaries. If no rule matches, fall back to paths.resume. The chosen variant and the matched rule must be recorded in the ledger notes for every submission, so resume-to-response conversion can be measured per variant later.",
+    "default": ".\\resumes\\Marc-Andy_Resume_Principal_Engineer.pdf",
+    "rules": [
+      {
+        "id": "java-spring",
+        "whenAnyKeyword": ["java", "spring boot", "springboot", "spring framework", "jvm", "kotlin"],
+        "resume": ".\\resumes\\Marc-Andy_Resume_Java_React.pdf",
+        "rationale": "Java/Spring Boot-first variant: Java and Spring Boot bolded first, Wells Fargo Spring Boot work foregrounded, JUnit lead test tool."
+      },
+      {
+        "id": "python",
+        "whenAnyKeyword": ["python", "django", "flask", "fastapi", "pandas"],
+        "resume": ".\\resumes\\Marc-Andy_Resume_Python_React.pdf",
+        "rationale": "Python-first variant: Python and Django bolded first, Lotnivo Python/Django work foregrounded. (A stricter backend-only variant exists at .\\resumes\\Marc-Andy_Resume_Python_Backend.pdf for roles with no front-end component.)"
+      },
+      {
+        "id": "react-typescript",
+        "whenAnyKeyword": ["react", "typescript", "next.js", "frontend", "front end", "front-end", "redux"],
+        "resume": ".\\resumes\\Marc-Andy_Resume_Python_React.pdf",
+        "rationale": "Front-end-leaning roles use the Python/React variant, which leads with React/TypeScript front ends; both variants carry React, Redux, and TypeScript in every relevant role."
+      }
+    ],
+    "precedenceNote": "Order matters: a role mentioning both Java and Python routes to the Java variant because java-spring is listed first. Adjust rule order deliberately, with a test, if conversion data says otherwise."
   },
   "stateMachine": {
     "states": [
