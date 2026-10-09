@@ -57,6 +57,11 @@ Rippling ATS / Hireology forms using the approved facts in
 upload verification, submit quirks, block-and-substitute policy) are
 codified in `docs/FORM_FILL_PLAYBOOK.md`.
 
+Resume selection happens before submission: `campaign.config.json` →
+`resumeRouting` picks the stack-matched variant from `resumes/` (Java/Spring,
+Python, or React/TypeScript), and `docs/RESUME_GUIDE.md` codifies the
+recruiter-event resume rules those variants follow.
+
 ### 5. Ledger & audit — custom
 
 | File | Role |
