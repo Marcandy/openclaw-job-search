@@ -189,7 +189,7 @@ test('authorize without a hash exits 2 rather than guessing', () => {
 
 const validate = join(root, 'validate-pool.mjs');
 
-/** Minimal candidate set that clears every gate for all four cities. */
+/** Minimal candidate set that clears every gate for all nine cities. */
 function smokeCandidates(dir) {
   const mk = (cityId, location, n) => ({
     cityId, location,
@@ -206,13 +206,18 @@ function smokeCandidates(dir) {
       thrivingSignals: [{ type: 'recent_funding_round', detail: 'Series B 2026', sourceUrl: 'https://example.com/x' }],
     },
   });
-  // Must satisfy the full 3 / 2 / 5 / 2 quota or the validator exits 1 on shortfall.
+  // Must satisfy the full 3 / 2 / 5 / 2 / 1x5 quota or the validator exits 1 on shortfall.
   const candidates = [
     mk('newark', 'Newark, NJ', 1), mk('newark', 'Newark, NJ', 2), mk('newark', 'Jersey City, NJ', 3),
     mk('san-jose', 'San Jose, CA', 1), mk('san-jose', 'San Jose, CA', 2),
     mk('chicago', 'Chicago, IL', 1), mk('chicago', 'Chicago, IL', 2), mk('chicago', 'Chicago, IL', 3),
     mk('chicago', 'Chicago, IL', 4), mk('chicago', 'Chicago, IL', 5),
     mk('atlanta', 'Atlanta, GA', 1), mk('atlanta', 'Atlanta, GA', 2),
+    mk('san-diego', 'San Diego, CA', 1),
+    mk('sacramento', 'Sacramento, CA', 1),
+    mk('washington-dc', 'Washington, DC', 1),
+    mk('houston', 'Houston, TX', 1),
+    mk('baltimore', 'Baltimore, MD', 1),
   ];
   const p = join(dir, 'candidates.json');
   writeFileSync(p, JSON.stringify({ candidates }, null, 2), 'utf8');
