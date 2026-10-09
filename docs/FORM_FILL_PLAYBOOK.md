@@ -127,3 +127,24 @@ near-failed submission. Follow them in order: **fill → verify → submit → v
 
 Invisible reCAPTCHA that never challenges is fine (Beyond Finance,
 Hark both submitted cleanly with one present).
+
+## Ashby: invisible reCAPTCHA hang on submit (PermitFlow, 2026-10-09)
+
+Some Ashby orgs gate the submit mutation behind an invisible reCAPTCHA
+Enterprise token. In a background-throttled tab the token fetch never
+resolves: the Submit button disables, a spinner shows, and no
+`ApiSubmitForm` request ever appears in network capture — the form looks
+"stuck" forever. Reloading and refilling does not help while the tab
+stays hidden, and the org flagged the attempts as possible spam.
+
+Detection: after clicking Submit, watch network for
+`api/non-user-graphql?op=ApiSubmitForm`. Field edits POST
+`ApiSetFormValue` immediately; if 30-60s pass with no submit request and
+the button stays disabled with a spinner, the submit is hung on the
+token, not "slow".
+
+Policy: do NOT keep retrying — repeated half-submissions read as spam
+and can get the applicant's email blocked org-wide. Make ONE
+foreground attempt (ask the owner to bring the tab visible); if it
+still hangs or the org flags spam, block, log, and substitute. Never
+attempt to script around the captcha token itself.
