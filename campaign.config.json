@@ -1,9 +1,9 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 5,
+  "version": 6,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
-  "description": "Four-market FullStack developer campaign. Daily quota is 3 confirmed submissions in the Newark/Jersey City NJ corridor, 2 in San Jose CA, 5 in Chicago IL, and 2 in Atlanta GA. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history; it now covers four markets, not three. Ranking hard-prefers thriving small and midsize companies that are not household names.",
+  "description": "Nine-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
   "versionHistory": [
     {
       "version": 2,
@@ -24,6 +24,11 @@
       "version": 5,
       "date": "2026-09-14",
       "change": "Added Atlanta, GA as a fourth market by user instruction: daily quota 2, minBackups 3, primary headcount ceiling 5,000 - sized identically to San Jose. Atlanta's actual in-city supply has not yet been measured with discovery/discover.py the way Newark's and Chicago's were on 2026-08-17; treat the San Jose-sized ceiling as a starting assumption, not a measured fact, until a real sweep confirms it. All other gates (title, experience, eligibility, compensation, company-profile, source, known-blocker) apply identically to Atlanta with no market-specific exception."
+    },
+    {
+      "version": 6,
+      "date": "2026-10-09",
+      "change": "Added five markets by user instruction: San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD, each with daily quota 1, minBackups 2, primary headcount ceiling 5,000. None of the five has been measured with discovery/discover.py; quotas are starting assumptions. DC and Baltimore carry a heavy cleared-defense share that knownBlockerFilter is expected to reject; Houston carries an energy-domain share that roleRelevance and judgment must filter; Sacramento is government-dominated so sourceFilter does the heavy lifting. All other gates apply identically with no market-specific exception."
     }
   ],
   "cities": [
@@ -225,6 +230,99 @@
         "note": "Raises SIZE only. The household-name deny list still bars any Atlanta-area employer a general US audience would recognize (e.g. Home Depot, Delta, UPS, Coca-Cola, NCR, Mailchimp/Intuit) regardless of this ceiling."
       },
       "notes": "New city in campaign version 5, added 2026-09-14 by user instruction. No prior ledger history for Atlanta - dedupe has nothing to check against yet. Supply has not been measured with discovery/discover.py; run it before assuming Atlanta behaves like San Jose."
+    },
+    {
+      "id": "san-diego",
+      "label": "San Diego, CA",
+      "state": "CA",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["San Diego, CA", "San Diego, California", "San Diego", "San Diego, CA hybrid", "San Diego, CA (Hybrid)", "US-CA-San Diego", "San Diego, CA, USA", "Greater San Diego"],
+      "excludedLocationPatterns": [],
+      "commuteAliases": ["La Jolla, CA", "Carlsbad, CA", "Chula Vista, CA"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. San Diego's large defense employers (Qualcomm, General Atomics, Northrop) are household names or clearance-bound and stay barred from primary regardless."
+      },
+      "notes": "Added 2026-10-09 by user instruction alongside Sacramento, Washington DC, Houston, and Baltimore. Supply unmeasured. Note: much of San Diego's tech market is defense/biotech - expect knownBlockerFilter (clearance, U.S. Person) to reject a large share."
+    },
+    {
+      "id": "sacramento",
+      "label": "Sacramento, CA",
+      "state": "CA",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Sacramento, CA", "Sacramento, California", "Sacramento", "Sacramento, CA hybrid", "Sacramento, CA (Hybrid)", "US-CA-Sacramento", "Sacramento, CA, USA", "Greater Sacramento"],
+      "excludedLocationPatterns": [],
+      "commuteAliases": ["Roseville, CA", "Folsom, CA", "Davis, CA"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured; Sacramento is a government-dominated market, so the staffing-intermediary and state-agency share of postings will be high - sourceFilter must do heavy lifting."
+    },
+    {
+      "id": "washington-dc",
+      "label": "Washington, DC",
+      "state": "DC",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Washington, DC", "Washington DC", "Washington, D.C.", "Washington D.C.", "DC", "Washington, DC hybrid", "Washington, DC (Hybrid)", "US-DC-Washington", "Washington, DC, USA", "DMV"],
+      "excludedLocationPatterns": ["washington state", "washington, wa", "washington, pa", "washington, mo", "washington, il", "washington, in", "washington, nc", "washington, ga", "washington, mi", "washington, nj"],
+      "excludedLocationNote": "'Washington' alone collides with Washington State and a dozen small municipalities. The bare alias 'DC' is accepted because it is unambiguous in US job postings.",
+      "commuteAliases": ["Arlington, VA", "Alexandria, VA", "Bethesda, MD", "Silver Spring, MD", "Tysons, VA", "Reston, VA", "McLean, VA"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. DC's dominant employers are federal contractors (Leidos, Booz Allen, CACI, SAIC, Peraton, MITRE) which are on the household-name deny list already, and most remaining cleared roles trip knownBlockerFilter on security-clearance requirements - expect a thin eligible pool."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. The DMV corridor aliases are OFF: Arlington/Tysons would swamp the DC quota with defense contractors."
+    },
+    {
+      "id": "houston",
+      "label": "Houston, TX",
+      "state": "TX",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Houston, TX", "Houston, Texas", "Houston", "Houston, TX hybrid", "Houston, TX (Hybrid)", "US-TX-Houston", "Houston, TX, USA", "Greater Houston"],
+      "excludedLocationPatterns": ["houston, scotland", "houston, bc", "houston, british columbia"],
+      "excludedLocationNote": "Houston, British Columbia and Houston, Renfrewshire (Scotland) both appear in global job boards.",
+      "commuteAliases": ["Sugar Land, TX", "Katy, TX", "The Woodlands, TX", "Pasadena, TX"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. Houston's energy majors (ExxonMobil, Chevron, ConocoPhillips, Shell, BP) are household names and stay barred from primary."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Energy-industry postings often hard-require domain background but not foreign languages, so skillMismatchFilter will not catch them - roleRelevance and judgment must."
+    },
+    {
+      "id": "baltimore",
+      "label": "Baltimore, MD",
+      "state": "MD",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Baltimore, MD", "Baltimore, Maryland", "Baltimore", "Baltimore, MD hybrid", "Baltimore, MD (Hybrid)", "US-MD-Baltimore", "Baltimore, MD, USA", "Greater Baltimore"],
+      "excludedLocationPatterns": ["baltimore, ireland", "baltimore, oh", "baltimore, ohio", "baltimore, vt"],
+      "excludedLocationNote": "Baltimore, Ohio and Baltimore, Vermont are separate small municipalities; Baltimore, Ireland appears on global boards.",
+      "commuteAliases": ["Columbia, MD", "Towson, MD", "Ellicott City, MD", "Annapolis, MD"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. Baltimore's anchors (Johns Hopkins, Under Armour, T. Rowe Price, Northrop Grumman) are household names and stay barred from primary."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Like DC, expect a large cleared-defense share that knownBlockerFilter will reject."
     }
   ],
   "titleFilter": {
