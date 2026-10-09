@@ -128,6 +128,59 @@ near-failed submission. Follow them in order: **fill → verify → submit → v
 Invisible reCAPTCHA that never challenges is fine (Beyond Finance,
 Hark both submitted cleanly with one present).
 
+## Greenhouse: DOM-event fallback when the panel is hidden (2026-10-09)
+
+Real-input actions (`mouse_click`, `key_type`, `send_keys`) fail when the
+browser panel is not visible — and a hidden/throttled renderer can also
+**silently drop previously committed react-select selections** (MongoDB:
+5 of 7 dropdown answers vanished after a freeze). Lessons from the
+2026-10-09 batch (LaunchDarkly, Figma, MongoDB, Duolingo — all submitted):
+
+1. **DOM-event picker for react-select.** When the panel is hidden, drive
+   react-select without real input: dispatch `mousedown`+`mouseup`+`click`
+   (MouseEvent, bubbles, view) on the `[class*=control]` element, wait
+   ~700 ms, then `.click()` the `[id*="<field>-option"]` whose text
+   matches. Verified working for country, authorization, sponsorship,
+   EEO, and "how did you hear" selects.
+2. **Async location typeahead:** open the control, set the input value via
+   the native setter + `input` event, wait ~1.8 s for the geocode API,
+   then `.click()` the matching option. If click-selection silently fails
+   in a visible panel, press `Enter` — the first option is pre-highlighted
+   on Greenhouse location pickers.
+3. **Stale dropdown overlays block the next click.** After selecting, a
+   ghost menu can stay rendered and cover the next field
+   (`element's center is covered by ...option`). Press `Escape` before
+   the next interaction.
+4. **Conditional-required fields only fail at submit validation**
+   (Duolingo: OPT follow-up questions were required even with
+   sponsorship=No). Budget one validation round: submit, read
+   "This field is required.", fix, resubmit. Error banners can be STALE
+   after the fix — resubmit once before concluding the form is still
+   broken.
+5. **DOM `.click()` on `button[type=submit]` works on Greenhouse** when
+   the panel is hidden (overrides Universal rule 8 for Greenhouse only;
+   still prefer real clicks when the panel is visible).
+6. **Always re-verify every single-value chip immediately before submit**
+   (Universal rule 3), not just after each pick — freeze/reload events
+   can roll selections back.
+7. **Embed URL shortcut:** when a careers site hides the apply link,
+   `https://job-boards.greenhouse.io/embed/job_app?for=<board>&token=<jobId>`
+   loads the bare form directly (used for MongoDB, Gusto, Duolingo).
+   Job ids and locations come from
+   `https://boards-api.greenhouse.io/v1/boards/<board>/jobs?content=false`.
+
+### Newly confirmed blockers (same policy, new evidence)
+
+- **Required ZIP/postal code:** Toast, Samsara, Gusto (2026-10-09) —
+  Gusto explicitly allows non-US candidates to enter "00000", but no
+  approved US ZIP exists in the brief, so all three blocked.
+- **Required education (School/Degree/Discipline):** Klaviyo
+  (2026-10-09) — school name is not an approved fact.
+- Optional education sections are fine — skip them; only *required*
+  education blocks.
+
+## Ashby: invisible reCAPTCHA hang on submit (PermitFlow, 2026-10-09)
+
 ## Ashby: invisible reCAPTCHA hang on submit (PermitFlow, 2026-10-09)
 
 Some Ashby orgs gate the submit mutation behind an invisible reCAPTCHA
