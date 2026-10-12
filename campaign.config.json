@@ -1,0 +1,1046 @@
+{
+  "campaign": "newark-sanjose-chicago-3-2-2",
+  "version": 6,
+  "timezone": "America/New_York",
+  "supersedes": "newark-san-jose-3x2",
+  "description": "Nine-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
+  "versionHistory": [
+    {
+      "version": 2,
+      "date": "2026-08-16",
+      "change": "Replaced newark-san-jose-3x2. Quota 3/2/2. Company-profile gate made a hard requirement."
+    },
+    {
+      "version": 3,
+      "date": "2026-08-17",
+      "change": "Newark widened to the Newark/Jersey City corridor and its primary headcount ceiling raised to 30,000; Chicago quota raised from 2 to 5. Both by user instruction after a measured sweep found 1 in-city Newark posting versus 134 in Chicago."
+    },
+    {
+      "version": 4,
+      "date": "2026-08-17",
+      "change": "San Jose and Chicago primary headcount ceilings raised from the global 1,000 to 5,000 by user instruction. Newark corridor stays at 30,000. Size ceilings only - the household-name gate and thriving-signal requirement are unchanged everywhere."
+    },
+    {
+      "version": 5,
+      "date": "2026-09-14",
+      "change": "Added Atlanta, GA as a fourth market by user instruction: daily quota 2, minBackups 3, primary headcount ceiling 5,000 - sized identically to San Jose. Atlanta's actual in-city supply has not yet been measured with discovery/discover.py the way Newark's and Chicago's were on 2026-08-17; treat the San Jose-sized ceiling as a starting assumption, not a measured fact, until a real sweep confirms it. All other gates (title, experience, eligibility, compensation, company-profile, source, known-blocker) apply identically to Atlanta with no market-specific exception."
+    },
+    {
+      "version": 6,
+      "date": "2026-10-09",
+      "change": "Added five markets by user instruction: San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD, each with daily quota 1, minBackups 2, primary headcount ceiling 5,000. None of the five has been measured with discovery/discover.py; quotas are starting assumptions. DC and Baltimore carry a heavy cleared-defense share that knownBlockerFilter is expected to reject; Houston carries an energy-domain share that roleRelevance and judgment must filter; Sacramento is government-dominated so sourceFilter does the heavy lifting. All other gates apply identically with no market-specific exception."
+    }
+  ],
+  "cities": [
+    {
+      "id": "newark",
+      "label": "Newark / Jersey City, NJ",
+      "state": "NJ",
+      "dailyQuota": 3,
+      "minBackups": 3,
+      "acceptedLocationAliases": [
+        "Newark, NJ",
+        "Newark, New Jersey",
+        "Newark",
+        "East Newark, NJ",
+        "Newark NJ hybrid",
+        "Newark, NJ (Hybrid)",
+        "US-NJ-Newark",
+        "NJ - Newark",
+        "Newark, NJ, USA",
+        "Newark, NJ 07102",
+        "Newark, NJ 07103",
+        "Newark, NJ 07105",
+        "Greater Newark",
+        "Newark Metropolitan",
+        "Jersey City, NJ",
+        "Jersey City, New Jersey",
+        "Jersey City",
+        "US-NJ-Jersey City",
+        "NJ - Jersey City",
+        "Jersey City, NJ, USA",
+        "Harrison, NJ",
+        "Hoboken, NJ"
+      ],
+      "corridorNote": "Widened 2026-08-17 by user instruction from Newark-only to the Newark/Jersey City corridor. A measured JobSpy sweep found exactly 1 in-city Newark software posting within 15 miles versus 134 for Chicago, so Newark alone could not fill a quota of 3. Jersey City, Harrison, and Hoboken are all on the PATH/light-rail corridor and were already producing submissions in the ledger (Speechify, Sourgum, Alpha Life Sciences, AvePoint). Newark proper still ranks first when scores are comparable.",
+      "excludedLocationPatterns": [
+        "newark, ca",
+        "newark, california",
+        "newark ca",
+        "newark, de",
+        "newark, delaware",
+        "newark de",
+        "newark, oh",
+        "newark, ohio",
+        "newark, ny",
+        "newark, new york",
+        "newark, tx",
+        "newark, texas",
+        "newark, ar",
+        "newark, arkansas",
+        "newark-on-trent",
+        "newark, england",
+        "newark, uk"
+      ],
+      "excludedLocationNote": "Newark exists in California (Silicon Valley), Delaware, Ohio, New York, Texas, Arkansas, and England. The bare 'Newark' alias matches by substring, so without these exclusions a Newark, CA role would satisfy the Newark, NJ quota. Exclusions are checked BEFORE aliases.",
+      "commuteAliases": [
+        "Elizabeth, NJ",
+        "Bayonne, NJ",
+        "Secaucus, NJ",
+        "Union City, NJ",
+        "New York, NY"
+      ],
+      "commuteAliasesAllowed": false,
+      "notes": "The corridor now covers Newark, East Newark, Jersey City, Harrison, and Hoboken — these are accepted outright. The commuteAliases above remain OFF: New York, NY in particular must never satisfy this quota, since a 15-mile sweep from Newark returns 158 Manhattan roles that would otherwise swamp the corridor. Record an unmet quota rather than widening further.",
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 30000,
+        "rationale": "User instruction 2026-08-17 raised this from 20,000 to 30,000, alongside widening the city to the Newark/Jersey City corridor. The original 2026-08-16 instruction was 'for Newark, headcount should be between 0 and 20000' after three research passes produced zero Newark candidates under the global 1000-person ceiling. This raises the ceiling for the Newark corridor ONLY. San Jose and Chicago remain capped at 1000.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, experience, eligibility, salary, location, source, and blocker gates"
+        ],
+        "note": "This raises the SIZE ceiling only. It does not admit household names. Prudential (~40k) and Maximus (~35k) still exceed even 30,000 and are on the deny list besides, so they remain backup-only with an explicit overrideReason. Note that the corridor's large employers — JPMorgan Chase, Bank of America, Goldman Sachs, AWS — are all on the household-name deny list and stay barred from primary regardless of this ceiling."
+      }
+    },
+    {
+      "id": "san-jose",
+      "label": "San Jose, CA",
+      "state": "CA",
+      "dailyQuota": 2,
+      "minBackups": 3,
+      "acceptedLocationAliases": [
+        "San Jose, CA",
+        "San Jose, California",
+        "San Jose",
+        "San Jose, CA hybrid",
+        "San Jose, CA (Hybrid)",
+        "US-CA-San Jose",
+        "San Jose, CA, USA"
+      ],
+      "excludedLocationPatterns": [
+        "san jose, costa rica",
+        "san josé, costa rica",
+        "san jose del",
+        "san jose, philippines"
+      ],
+      "excludedLocationNote": "San Jose, Costa Rica is a common offshore-hub posting location and would otherwise satisfy the San Jose, CA quota via the bare 'San Jose' alias.",
+      "commuteAliases": [
+        "Santa Clara, CA",
+        "Sunnyvale, CA",
+        "Milpitas, CA",
+        "Campbell, CA"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "User instruction 2026-08-17: raise the San Jose primary headcount ceiling from the global 1,000 to 5,000. This admits established mid-size Bay Area engineering employers that are not household names.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
+        "note": "Raises SIZE only. The household-name deny list still bars Western Digital, NetApp, NXP, Roku, The Trade Desk, Lambda, and similar regardless of this ceiling."
+      },
+      "notes": "Quota reduced from 3 to 2 in campaign version 2. Primary headcount ceiling raised to 5,000 in version 4."
+    },
+    {
+      "id": "chicago",
+      "label": "Chicago, IL",
+      "state": "IL",
+      "dailyQuota": 5,
+      "minBackups": 3,
+      "quotaNote": "Raised from 2 to 5 on 2026-08-17 by user instruction. Chicago is where the supply actually is: a measured 15-mile JobSpy sweep returned 134 in-city postings and 100 survived the title/level/intermediary gates, versus 1 and 0 for Newark.",
+      "acceptedLocationAliases": [
+        "Chicago, IL",
+        "Chicago, Illinois",
+        "Chicago",
+        "Chicago, IL hybrid",
+        "Chicago, IL (Hybrid)",
+        "US-IL-Chicago",
+        "Chicago, IL, USA",
+        "Greater Chicago"
+      ],
+      "excludedLocationPatterns": [
+        "west chicago, il",
+        "chicago heights",
+        "east chicago, in",
+        "north chicago, il"
+      ],
+      "excludedLocationNote": "West Chicago, Chicago Heights, North Chicago (all IL) and East Chicago (Indiana) are separate municipalities, not Chicago proper.",
+      "commuteAliases": [
+        "Evanston, IL",
+        "Oak Brook, IL",
+        "Rosemont, IL"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "User instruction 2026-08-17: raise the Chicago primary headcount ceiling from the global 1,000 to 5,000. Chicago now carries the largest quota (5), so it needs the widest eligible employer pool of the three markets.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
+        "note": "Raises SIZE only. Household names such as Grubhub, Groupon, Motorola, Abbott, Aon, and the Chicago trading firms (Citadel, Jump, DRW, Optiver, Belvedere) remain barred from primary by the deny list."
+      },
+      "notes": "New city in campaign version 2. Chicago has substantial prior ledger history - dedupe aggressively against the 15 existing Chicago rows. Quota raised to 5 and primary headcount ceiling raised to 5,000 in version 4."
+    },
+    {
+      "id": "atlanta",
+      "label": "Atlanta, GA",
+      "state": "GA",
+      "dailyQuota": 2,
+      "minBackups": 3,
+      "acceptedLocationAliases": [
+        "Atlanta, GA",
+        "Atlanta, Georgia",
+        "Atlanta",
+        "Atlanta, GA hybrid",
+        "Atlanta, GA (Hybrid)",
+        "US-GA-Atlanta",
+        "GA - Atlanta",
+        "Atlanta, GA, USA",
+        "Greater Atlanta"
+      ],
+      "excludedLocationPatterns": [
+        "atlanta, tx",
+        "atlanta, texas",
+        "atlanta, mi",
+        "atlanta, michigan"
+      ],
+      "excludedLocationNote": "Atlanta, TX and Atlanta, MI are separate small municipalities that the bare 'Atlanta' alias would otherwise match by substring. This exclusion list is precautionary, following the same pattern that caught Newark, CA and San Jose, Costa Rica - it has not yet been confirmed against a live sweep the way those were, since discovery has not been run for this market yet.",
+      "commuteAliases": [
+        "Marietta, GA",
+        "Alpharetta, GA",
+        "Sandy Springs, GA",
+        "Decatur, GA",
+        "Dunwoody, GA",
+        "Norcross, GA"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "User instruction 2026-09-14, when Atlanta was added as a fourth market: size the primary headcount ceiling identically to San Jose (5,000) rather than the global 1,000, admitting established mid-size employers that are not household names.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
+        "note": "Raises SIZE only. The household-name deny list still bars any Atlanta-area employer a general US audience would recognize (e.g. Home Depot, Delta, UPS, Coca-Cola, NCR, Mailchimp/Intuit) regardless of this ceiling."
+      },
+      "notes": "New city in campaign version 5, added 2026-09-14 by user instruction. No prior ledger history for Atlanta - dedupe has nothing to check against yet. Supply has not been measured with discovery/discover.py; run it before assuming Atlanta behaves like San Jose."
+    },
+    {
+      "id": "san-diego",
+      "label": "San Diego, CA",
+      "state": "CA",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["San Diego, CA", "San Diego, California", "San Diego", "San Diego, CA hybrid", "San Diego, CA (Hybrid)", "US-CA-San Diego", "San Diego, CA, USA", "Greater San Diego"],
+      "excludedLocationPatterns": [],
+      "commuteAliases": ["La Jolla, CA", "Carlsbad, CA", "Chula Vista, CA"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. San Diego's large defense employers (Qualcomm, General Atomics, Northrop) are household names or clearance-bound and stay barred from primary regardless."
+      },
+      "notes": "Added 2026-10-09 by user instruction alongside Sacramento, Washington DC, Houston, and Baltimore. Supply unmeasured. Note: much of San Diego's tech market is defense/biotech - expect knownBlockerFilter (clearance, U.S. Person) to reject a large share."
+    },
+    {
+      "id": "sacramento",
+      "label": "Sacramento, CA",
+      "state": "CA",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Sacramento, CA", "Sacramento, California", "Sacramento", "Sacramento, CA hybrid", "Sacramento, CA (Hybrid)", "US-CA-Sacramento", "Sacramento, CA, USA", "Greater Sacramento"],
+      "excludedLocationPatterns": [],
+      "commuteAliases": ["Roseville, CA", "Folsom, CA", "Davis, CA"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured; Sacramento is a government-dominated market, so the staffing-intermediary and state-agency share of postings will be high - sourceFilter must do heavy lifting."
+    },
+    {
+      "id": "washington-dc",
+      "label": "Washington, DC",
+      "state": "DC",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Washington, DC", "Washington DC", "Washington, D.C.", "Washington D.C.", "DC", "Washington, DC hybrid", "Washington, DC (Hybrid)", "US-DC-Washington", "Washington, DC, USA", "DMV"],
+      "excludedLocationPatterns": ["washington state", "washington, wa", "washington, pa", "washington, mo", "washington, il", "washington, in", "washington, nc", "washington, ga", "washington, mi", "washington, nj"],
+      "excludedLocationNote": "'Washington' alone collides with Washington State and a dozen small municipalities. The bare alias 'DC' is accepted because it is unambiguous in US job postings.",
+      "commuteAliases": ["Arlington, VA", "Alexandria, VA", "Bethesda, MD", "Silver Spring, MD", "Tysons, VA", "Reston, VA", "McLean, VA"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. DC's dominant employers are federal contractors (Leidos, Booz Allen, CACI, SAIC, Peraton, MITRE) which are on the household-name deny list already, and most remaining cleared roles trip knownBlockerFilter on security-clearance requirements - expect a thin eligible pool."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. The DMV corridor aliases are OFF: Arlington/Tysons would swamp the DC quota with defense contractors."
+    },
+    {
+      "id": "houston",
+      "label": "Houston, TX",
+      "state": "TX",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Houston, TX", "Houston, Texas", "Houston", "Houston, TX hybrid", "Houston, TX (Hybrid)", "US-TX-Houston", "Houston, TX, USA", "Greater Houston"],
+      "excludedLocationPatterns": ["houston, scotland", "houston, bc", "houston, british columbia"],
+      "excludedLocationNote": "Houston, British Columbia and Houston, Renfrewshire (Scotland) both appear in global job boards.",
+      "commuteAliases": ["Sugar Land, TX", "Katy, TX", "The Woodlands, TX", "Pasadena, TX"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. Houston's energy majors (ExxonMobil, Chevron, ConocoPhillips, Shell, BP) are household names and stay barred from primary."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Energy-industry postings often hard-require domain background but not foreign languages, so skillMismatchFilter will not catch them - roleRelevance and judgment must."
+    },
+    {
+      "id": "baltimore",
+      "label": "Baltimore, MD",
+      "state": "MD",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": ["Baltimore, MD", "Baltimore, Maryland", "Baltimore", "Baltimore, MD hybrid", "Baltimore, MD (Hybrid)", "US-MD-Baltimore", "Baltimore, MD, USA", "Greater Baltimore"],
+      "excludedLocationPatterns": ["baltimore, ireland", "baltimore, oh", "baltimore, ohio", "baltimore, vt"],
+      "excludedLocationNote": "Baltimore, Ohio and Baltimore, Vermont are separate small municipalities; Baltimore, Ireland appears on global boards.",
+      "commuteAliases": ["Columbia, MD", "Towson, MD", "Ellicott City, MD", "Annapolis, MD"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
+        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "note": "Raises SIZE only. Baltimore's anchors (Johns Hopkins, Under Armour, T. Rowe Price, Northrop Grumman) are household names and stay barred from primary."
+      },
+      "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Like DC, expect a large cleared-defense share that knownBlockerFilter will reject."
+    }
+  ],
+  "titleFilter": {
+    "bannedTokens": [
+      "senior",
+      "sr",
+      "snr",
+      "staff",
+      "principal",
+      "lead",
+      "manager",
+      "director",
+      "vp",
+      "vice president",
+      "chief",
+      "architect",
+      "head of",
+      "distinguished",
+      "fellow"
+    ],
+    "note": "Matched case-insensitively on word boundaries against the exact posted title. Any match is a hard reject with no override."
+  },
+  "experienceFilter": {
+    "maxAcceptedMinimumYears": 5,
+    "note": "Parse every years-of-experience phrase in the posted description. If the lowest required years value exceeds 5, hard reject. '5+ years' passes; '6+ years', 'at least 7 years', and 'minimum of six years' are rejected."
+  },
+  "roleRelevanceFilter": {
+    "enabled": true,
+    "rationale": "Added 2026-08-16 after 'Hospital Applications Analyst - Anatomic Pathology' at University Hospital reached a Newark primary slot. It passed every mechanical gate but is a clinical systems configuration role - workflow analysis, requirements gathering, vendor coordination, training - not software engineering in this applicant's React/TypeScript/Java/Spring Boot/Python stack. Nothing was checking that the role is actually a developer job.",
+    "requireEngineeringTitleToken": true,
+    "engineeringTitleTokens": [
+      "software engineer",
+      "engineer",
+      "developer",
+      "programmer",
+      "sde",
+      "swe",
+      "full stack",
+      "fullstack",
+      "full-stack",
+      "frontend",
+      "front end",
+      "front-end",
+      "backend",
+      "back end",
+      "back-end",
+      "web development",
+      "software development",
+      "sdet"
+    ],
+    "note": "The posted TITLE must contain at least one of these tokens. This is deliberately a positive requirement rather than a deny list: every role type this campaign targets (full-stack, frontend, backend, web/product, AI application, QA automation, Software Engineer I/II) contains one. A generic 'Analyst', 'Specialist', 'Coordinator', 'Technician', 'Administrator', or 'Consultant' title does not, and those have historically been support or configuration roles rather than development. If a genuinely good developer role is ever rejected here, add its token deliberately with a test - do not disable the gate."
+  },
+  "knownBlockerFilter": {
+    "enabled": true,
+    "rationale": "Added 2026-08-16. The gap-fill run proposed Muon Space 'Software Engineer, Simulation Infrastructure' for a primary slot. Muon Space already appears in the ledger blocked on 2026-08-09 by the export-control 'U.S. Person' question. Role-level dedupe missed it because the title differs, but that question lives on the company's application form, so any Muon Space role blocks identically. Spending a quota slot there is guaranteed waste.",
+    "action": "reject",
+    "structuralBlockerPatterns": [
+      "u.s. person",
+      "us person",
+      "export-control",
+      "export control",
+      "citizenship",
+      "lawful permanent resident",
+      "green card",
+      "security clearance",
+      "background check",
+      "background-check",
+      "fingerprint",
+      "arbitration",
+      "street address",
+      "full address",
+      "zip code",
+      "postal code",
+      "degree major",
+      "major or closely related",
+      "closely related field",
+      "previously interviewed",
+      "interviewed with us within",
+      "wait at least 365 days",
+      "365 days before reapplying",
+      "reapply after"
+    ],
+    "note": "Matched case-insensitively against the notes column of ledger rows whose status is 'blocked'. A company with such a row is treated as blocked for ALL future roles, because the question sits on the employer's form rather than on one posting. Role-specific blockers such as a one-off essay prompt are not in this list and do not disqualify a company. To deliberately retry a blocked company, set retryKnownBlocker true on that candidate. Added 2026-09-11: Etched rejected every new Ashby application with a 365-day prior-interview lock after earlier Etched submissions — company-level, not role-level."
+  },
+  "eligibilityFilter": {
+    "enabled": true,
+    "rationale": "Added 2026-08-16 after a 'Graduate Developer Programme Chicago 2027' reached a primary slot. Its stated criterion is 'final-year undergraduate or master's student'. The applicant holds a completed Bachelor of Science and has ten years of experience, so he is not eligible. Applying would either waste the slot or require misrepresenting his enrollment status.",
+    "rejectCurrentStudentRequirement": true,
+    "rejectInternships": true,
+    "currentStudentPatterns": [
+      "final-year undergraduate",
+      "final year undergraduate",
+      "currently enrolled",
+      "must be enrolled",
+      "current student",
+      "rising senior",
+      "rising junior",
+      "expected graduation",
+      "graduating in 20",
+      "class of 20",
+      "pursuing a bachelor",
+      "pursuing a master",
+      "master's student",
+      "masters student",
+      "undergraduate student",
+      "phd student",
+      "degree in progress",
+      "still in school"
+    ],
+    "internshipPatterns": [
+      "internship",
+      "intern position",
+      "summer intern",
+      "co-op program",
+      "co-op position"
+    ],
+    "note": "These patterns are matched against the posted description AND the title. A role that merely welcomes new graduates is fine; a role that REQUIRES current enrollment is not.",
+    "rejectHigherDegreeRequirement": true,
+    "higherDegreePatterns": [
+      "master's degree required",
+      "masters degree required",
+      "requires a master",
+      "require a master",
+      "must have a master",
+      "master's degree in engineering",
+      "master's or phd",
+      "ms or phd",
+      "phd required",
+      "ph.d. required",
+      "doctorate required",
+      "doctoral degree required",
+      "advanced degree required",
+      "graduate degree required",
+      "master's degree or",
+      "mba required"
+    ],
+    "higherDegreeNote": "Added 2026-08-24 after Neural Concept reached a Newark-corridor primary slot. Its posting requires a master's degree in Engineering, Applied Mathematics, or Physics, while the applicant holds a COMPLETED Bachelor of Science. A posting that merely PREFERS an advanced degree is fine - only a hard requirement disqualifies. Softening phrases such as \"bachelor's or master's\", \"master's a plus\", and \"or equivalent experience\" must NOT trigger a rejection."
+  },
+  "compensationFilter": {
+    "minimumAcceptableSalary": 90000,
+    "desiredSalary": 120000,
+    "rejectWhenPostedMaximumBelowFloor": true,
+    "unpostedSalaryIsUncertaintyNotRejection": true,
+    "note": "A missing salary is recorded as an uncertainty and caps the role at backup bucket. It is never permission to invent a number."
+  },
+  "companyProfileFilter": {
+    "enabled": true,
+    "rationale": "User directive 2026-08-16: prioritize medium to small companies that are not well known but are thriving.",
+    "headcountBands": {
+      "micro": {
+        "min": 1,
+        "max": 50,
+        "primaryEligible": true,
+        "score": 30
+      },
+      "small": {
+        "min": 51,
+        "max": 200,
+        "primaryEligible": true,
+        "score": 35
+      },
+      "mid": {
+        "min": 201,
+        "max": 1000,
+        "primaryEligible": true,
+        "score": 30
+      },
+      "large": {
+        "min": 1001,
+        "max": 5000,
+        "primaryEligible": false,
+        "score": 8
+      },
+      "enterprise": {
+        "min": 5001,
+        "max": null,
+        "primaryEligible": false,
+        "score": 0
+      }
+    },
+    "primaryBucketRequires": {
+      "headcountBandIn": [
+        "micro",
+        "small",
+        "mid"
+      ],
+      "isHouseholdName": false,
+      "minThrivingSignals": 1
+    },
+    "backupBucketRequires": {
+      "minThrivingSignals": 1
+    },
+    "largeCompanyBackupOverride": {
+      "allowed": true,
+      "requiresExplicitReason": true,
+      "note": "A large or enterprise employer may occupy a BACKUP slot only with an explicit overrideReason describing an unusually strong role match. It may never occupy a primary slot and is always ordered last."
+    },
+    "householdNameDenyList": [
+      "amazon",
+      "aws",
+      "google",
+      "alphabet",
+      "meta",
+      "facebook",
+      "apple",
+      "microsoft",
+      "netflix",
+      "nvidia",
+      "intel",
+      "ibm",
+      "oracle",
+      "salesforce",
+      "adobe",
+      "cisco",
+      "qualcomm",
+      "broadcom",
+      "amd",
+      "dell",
+      "hp",
+      "hpe",
+      "sap",
+      "vmware",
+      "paypal",
+      "ebay",
+      "uber",
+      "lyft",
+      "airbnb",
+      "doordash",
+      "instacart",
+      "stripe",
+      "square",
+      "block",
+      "coinbase",
+      "robinhood",
+      "twilio",
+      "snowflake",
+      "databricks",
+      "palantir",
+      "openai",
+      "anthropic",
+      "tesla",
+      "spacex",
+      "boeing",
+      "lockheed",
+      "raytheon",
+      "northrop",
+      "general electric",
+      "ge",
+      "siemens",
+      "honeywell",
+      "3m",
+      "johnson",
+      "pfizer",
+      "merck",
+      "walmart",
+      "target",
+      "costco",
+      "home depot",
+      "nike",
+      "disney",
+      "comcast",
+      "verizon",
+      "at&t",
+      "t-mobile",
+      "charter",
+      "jpmorgan",
+      "chase",
+      "goldman sachs",
+      "morgan stanley",
+      "bank of america",
+      "wells fargo",
+      "citigroup",
+      "citi",
+      "american express",
+      "capital one",
+      "prudential",
+      "metlife",
+      "aig",
+      "allstate",
+      "state farm",
+      "progressive",
+      "geico",
+      "united healthcare",
+      "unitedhealth",
+      "cvs",
+      "walgreens",
+      "fedex",
+      "ups",
+      "delta",
+      "united airlines",
+      "american airlines",
+      "southwest",
+      "marriott",
+      "hilton",
+      "mcdonald",
+      "starbucks",
+      "pepsi",
+      "coca-cola",
+      "procter",
+      "unilever",
+      "nestle",
+      "kraft",
+      "general mills",
+      "western digital",
+      "seagate",
+      "netapp",
+      "nxp",
+      "texas instruments",
+      "micron",
+      "applied materials",
+      "lam research",
+      "kla",
+      "analog devices",
+      "marvell",
+      "broadridge",
+      "pseg",
+      "public service enterprise",
+      "maximus",
+      "deloitte",
+      "accenture",
+      "pwc",
+      "kpmg",
+      "ernst",
+      "mckinsey",
+      "bain",
+      "boston consulting",
+      "cognizant",
+      "infosys",
+      "wipro",
+      "tcs",
+      "tata",
+      "hcl",
+      "capgemini",
+      "dxc",
+      "leidos",
+      "booz allen",
+      "caci",
+      "saic",
+      "mitre",
+      "peraton",
+      "workday",
+      "servicenow",
+      "atlassian",
+      "shopify",
+      "spotify",
+      "zoom",
+      "slack",
+      "dropbox",
+      "box",
+      "okta",
+      "crowdstrike",
+      "palo alto networks",
+      "fortinet",
+      "zscaler",
+      "cloudflare",
+      "datadog",
+      "mongodb",
+      "elastic",
+      "hashicorp",
+      "gitlab",
+      "github",
+      "docusign",
+      "zendesk",
+      "hubspot",
+      "mailchimp",
+      "intuit",
+      "adp",
+      "paychex",
+      "fiserv",
+      "fidelity",
+      "vanguard",
+      "blackrock",
+      "schwab",
+      "e*trade",
+      "nasdaq",
+      "nyse",
+      "cme group",
+      "cboe",
+      "citadel",
+      "jane street",
+      "two sigma",
+      "de shaw",
+      "jump trading",
+      "drw",
+      "optiver",
+      "imc",
+      "sig",
+      "susquehanna",
+      "belvedere",
+      "grubhub",
+      "groupon",
+      "motorola",
+      "abbott",
+      "abbvie",
+      "baxter",
+      "boeing",
+      "united",
+      "allstate",
+      "aon",
+      "mcdonalds",
+      "sony",
+      "playstation",
+      "zoox",
+      "waymo",
+      "cruise",
+      "rivian",
+      "lucid",
+      "lambda",
+      "veeva",
+      "smartsheet",
+      "iterable",
+      "sigma computing",
+      "audible",
+      "webmd",
+      "figure ai",
+      "sierra",
+      "langchain",
+      "speechify",
+      "whoop",
+      "flock safety",
+      "read ai",
+      "supermicro",
+      "super micro",
+      "rbc",
+      "royal bank of canada",
+      "caesars",
+      "td bank",
+      "pnc",
+      "truist",
+      "us bank",
+      "bny mellon",
+      "bnp paribas",
+      "barclays",
+      "hsbc",
+      "deutsche bank",
+      "ubs",
+      "credit suisse",
+      "societe generale",
+      "natwest",
+      "santander",
+      "fidelity investments",
+      "northern trust",
+      "state street",
+      "discover financial"
+    ],
+    "householdNameDenyListNote": "Case-insensitive substring match on the normalized company name. This list is a deterministic floor, not a complete definition of 'well known'. The researcher must ALSO set isHouseholdName=true for any other employer a general US audience would recognize. Names already present in the application ledger appear here so the campaign stops recycling them.",
+    "thrivingSignalTypes": [
+      "recent_funding_round",
+      "revenue_growth_public_statement",
+      "profitability_public_statement",
+      "headcount_growth",
+      "named_customer_traction",
+      "product_launch_or_expansion",
+      "industry_award_or_ranking"
+    ],
+    "thrivingSignalRequirements": {
+      "eachSignalNeedsSourceUrl": true,
+      "maxSignalAgeMonths": 24,
+      "note": "A thriving signal must be a specific, dated, publicly verifiable fact with a source URL. 'Seems to be doing well' is not a signal. Do not invent or infer signals."
+    }
+  },
+  "sourceFilter": {
+    "requireOfficialEmployerOrAtsUrl": true,
+    "rejectAggregatorApplicationPages": true,
+    "rejectStaffingIntermediaries": true,
+    "rejectCommissionOnly": true,
+    "rejectUnpaid": true,
+    "rejectContractOnly": true,
+    "preferredPostingAgeDays": 4,
+    "maxPostingAgeDays": 30,
+    "undatedPostingRule": {
+      "note": "Some ATSes (Rippling, and Lever in many configurations) never publish a posting date. Demoting those roles would penalize the employer's ATS rather than the role, so an undated posting is capped at backup UNLESS the researcher supplies verifiedActiveOn equal to the campaign date. The specification already requires confirming that every posting is open on the day of the run, and 'is it open right now' is the fact the freshness rule is a proxy for. A stale verifiedActiveOn from an earlier date does not count.",
+      "acceptVerifiedActiveOn": true
+    }
+  },
+  "atsPreference": {
+    "note": "Ranking tiebreaker only for fit. Measured ledger conversion still decides whether a slot is worth spending: an unmeasured or zero-rate ATS behaves like a zero. Updated 2026-09-11 from openclaw-application-log.csv.",
+    "tiers": [
+      {
+        "tier": 1,
+        "platforms": [
+          "ashby",
+          "greenhouse",
+          "rippling"
+        ],
+        "score": 10,
+        "evidence": "Ashby 48/60 (80%); Greenhouse 20/34 (59%); Rippling 2/3 (67%) as of 2026-09-11"
+      },
+      {
+        "tier": 2,
+        "platforms": [
+          "breezy",
+          "avature"
+        ],
+        "score": 4,
+        "evidence": "Breezy 1/2 (50%); Avature unmeasured but not zero-rate in ledger"
+      },
+      {
+        "tier": 3,
+        "platforms": [
+          "lever"
+        ],
+        "score": 2,
+        "evidence": "Lever 3/17 (18%); frequent hCaptcha"
+      },
+      {
+        "tier": 4,
+        "platforms": [
+          "workday",
+          "taleo",
+          "successfactors",
+          "jobvite",
+          "icims",
+          "smartrecruiters",
+          "applytojob",
+          "workable",
+          "oracle",
+          "custom"
+        ],
+        "score": 0,
+        "evidence": "Zero or near-zero measured conversion, account walls, or residential-address friction. Demoted jobvite/icims/smartrecruiters from tier 2 on 2026-09-11 after ledger disagreement."
+      }
+    ]
+  },
+  "roles": [
+    "Full-stack software engineer",
+    "Frontend engineer",
+    "Backend engineer",
+    "Web or product software engineer",
+    "AI application engineer or deployed/forward-deployed engineer",
+    "QA automation or software test automation engineer",
+    "Software Engineer I/II, Associate, Junior, and genuinely mid-level roles"
+  ],
+  "skills": [
+    "React",
+    "Next.js",
+    "React Native",
+    "TypeScript",
+    "JavaScript",
+    "Java",
+    "Spring Boot",
+    "Node.js",
+    "Python",
+    "Django",
+    "REST APIs",
+    "GraphQL",
+    "AWS",
+    "Docker",
+    "CI/CD",
+    "Automated testing",
+    "Applied AI",
+    "agents",
+    "RAG",
+    "evaluation"
+  ],
+  "paths": {
+    "resume": ".\\resumes\\Resume_General.pdf",
+    "ledgerCsv": ".\\openclaw-application-log.csv",
+    "state": ".\\openclaw-tri-city-state.json",
+    "poolReportDir": ".",
+    "poolReportPattern": "openclaw-tri-city-role-pool-{date}.md",
+    "openclawMediaInbound": "~/.openclaw\\media\\inbound",
+    "jobsyncStarter": ".\\integrations\\jobsync\\start-jobsync.ps1",
+    "jobsyncDashboard": "http://127.0.0.1:3737"
+  },
+  "resumeRouting": {
+    "note": "Added 2026-10-08 from recruiter-event feedback: submit the resume variant that matches the role's primary stack instead of one generic resume for everything. Rules are evaluated in order; the first rule whose keywords appear in the posted title or description wins. Matching is case-insensitive on word boundaries. If no rule matches, fall back to paths.resume. The chosen variant and the matched rule must be recorded in the ledger notes for every submission, so resume-to-response conversion can be measured per variant later.",
+    "default": ".\\resumes\\Resume_General.pdf",
+    "rules": [
+      {
+        "id": "java-spring",
+        "whenAnyKeyword": ["java", "spring boot", "springboot", "spring framework", "jvm", "kotlin"],
+        "resume": ".\\resumes\\Resume_Java_React.pdf",
+        "rationale": "Java/Spring Boot-first variant: Java and Spring Boot foregrounded in the summary and experience sections."
+      },
+      {
+        "id": "python",
+        "whenAnyKeyword": ["python", "django", "flask", "fastapi", "pandas"],
+        "resume": ".\\resumes\\Resume_Python_React.pdf",
+        "rationale": "Python-first variant: Python and Django foregrounded in the summary and experience sections. (A stricter backend-only variant exists at .\\resumes\\Resume_Python_Backend.pdf for roles with no front-end component.)"
+      },
+      {
+        "id": "react-typescript",
+        "whenAnyKeyword": ["react", "typescript", "next.js", "frontend", "front end", "front-end", "redux"],
+        "resume": ".\\resumes\\Resume_Python_React.pdf",
+        "rationale": "Front-end-leaning roles use the Python/React variant, which leads with React/TypeScript front ends; both variants carry React, Redux, and TypeScript in every relevant role."
+      }
+    ],
+    "precedenceNote": "Order matters: a role mentioning both Java and Python routes to the Java variant because java-spring is listed first. Adjust rule order deliberately, with a test, if conversion data says otherwise."
+  },
+  "stateMachine": {
+    "states": [
+      "idle",
+      "researching",
+      "awaiting_authorization",
+      "authorized",
+      "submitting",
+      "quota_complete",
+      "exhausted"
+    ],
+    "transitions": {
+      "idle": [
+        "researching"
+      ],
+      "researching": [
+        "awaiting_authorization",
+        "idle"
+      ],
+      "awaiting_authorization": [
+        "authorized",
+        "researching"
+      ],
+      "authorized": [
+        "submitting"
+      ],
+      "submitting": [
+        "quota_complete",
+        "exhausted",
+        "authorized"
+      ],
+      "quota_complete": [
+        "idle"
+      ],
+      "exhausted": [
+        "researching",
+        "idle"
+      ]
+    },
+    "authorizationRecord": {
+      "requiredFields": [
+        "authorizedAt",
+        "authorizedBy",
+        "poolHash",
+        "exactUrls"
+      ],
+      "note": "poolHash is a SHA-256 over the sorted exact URL list. A submission run MUST recompute the hash and refuse to run if it differs, so no later process can substitute a destination into an already-authorized batch."
+    }
+  },
+  "skillMismatchFilter": {
+    "enabled": true,
+    "rationale": "Added 2026-08-24 after three Stevens Capital Management roles reached the Newark-corridor pool. Each hard-requires professional-level C++ in Linux; the applicant has no C++. roleRelevance checks the title, not the required stack, so nothing caught it. A '.NET Full Stack Developer' lead in the same sweep had the identical problem.",
+    "applicantLanguages": [
+      "javascript",
+      "typescript",
+      "java",
+      "python",
+      "sql",
+      "html",
+      "css",
+      "react",
+      "next.js",
+      "react native",
+      "node",
+      "spring boot",
+      "django"
+    ],
+    "foreignLanguages": [
+      "c\\+\\+",
+      "c#",
+      "\\.net",
+      "golang",
+      "rust",
+      "scala",
+      "ruby",
+      "php",
+      "perl",
+      "kotlin",
+      "swift",
+      "objective-c",
+      "matlab",
+      "cobol",
+      "delphi",
+      "elixir",
+      "haskell",
+      "clojure",
+      "fortran",
+      "dart",
+      "flutter",
+      "\bvb.net\b",
+      "vba",
+      "abap",
+      "groovy",
+      "lua",
+      "julia",
+      "erlang",
+      "ocaml",
+      "f#"
+    ],
+    "requirementCues": [
+      "proficiency in",
+      "professional-level",
+      "professional level",
+      "strong",
+      "expert in",
+      "advanced",
+      "years of",
+      "experience in",
+      "experience with",
+      "must have",
+      "required",
+      "requirements include",
+      "high proficiency"
+    ],
+    "softeningCues": [
+      "a plus",
+      "plus",
+      "preferred",
+      "nice to have",
+      "bonus",
+      "helpful",
+      "familiarity",
+      "exposure",
+      "or equivalent",
+      "willing to learn",
+      "not required"
+    ],
+    "note": "Rejects only when a non-stack language appears within a requirement phrase AND is not softened nearby. 'Java, Python, or Perl are a plus' must never trigger. This gate exists to stop spending quota slots on roles the applicant genuinely cannot do, not to narrow the search.",
+    "foreignLanguagesNote": "The bare word \"go\" is deliberately absent: it matched ordinary prose (\"go-to-market\", \"going\") and falsely rejected AiPrise on 2026-08-24. Only \"golang\" is matched, which under-detects Go roles rather than over-rejecting good ones.",
+    "foreignLanguagesAddendum2026_09_09": "dart/flutter added after NOCD \"Flutter Mobile Engineer\" passed on 2026-09-08. React Native is NOT Flutter; the two share no language or runtime. The remaining additions are ecosystems the applicant does not work in and which had no entry."
+  }
+}

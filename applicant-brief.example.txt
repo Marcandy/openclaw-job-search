@@ -1,0 +1,48 @@
+# Applicant Brief — TEMPLATE
+# Copy this file to `applicant-brief.txt` (gitignored — never commit the real one)
+# and fill in YOUR facts. The agent is only allowed to use facts listed here.
+# Anything not listed = "unknown" = the form gets blocked and logged, not guessed.
+
+## Identity & contact
+- Full legal name:
+- Preferred name:
+- Email:
+- Phone:
+- LinkedIn URL:
+- GitHub URL:
+- Personal site:
+
+## Location rules
+- City + state to answer (city only — no street address, no ZIP):
+- Willing to relocate? yes/no:
+- Onsite / hybrid / remote / travel preferences:
+
+## Work authorization
+- Authorized to work in your country? yes/no:
+- Require sponsorship now or in the future? yes/no:
+- (US only) "U.S. Person" export-control answer (citizen / LPR / etc.):
+
+## Experience & compensation
+- Years of experience:
+- Stack summary (e.g. React, TypeScript, Python, Java):
+- Salary expectation + floor:
+
+## Education
+- Highest completed degree:
+- School / major / graduation dates:
+- (Leave blank what you do not want to disclose — a form that REQUIRES
+   blank fields is skipped and logged as blocked.)
+
+## EEO answers (US forms, optional but recommended to pre-decide)
+- Gender:
+- Race/ethnicity:
+- Hispanic/Latino:
+- Veteran status:
+- Disability status:
+- Sexual orientation / transgender (answer or "I don't wish to answer"):
+
+## Policies
+- Decline marketing / SMS / talent-community opt-ins: yes/no
+- Cover letters: only when required? yes/no
+- CAPTCHA workarounds: never (hard rule)
+- Essay/short-answer questions: resume facts only, never invented
