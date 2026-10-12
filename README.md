@@ -14,6 +14,26 @@ application.**
 > ledger are all gitignored by design. See `applicant-brief.example.txt`
 > and `resumes/README.md`.
 
+## What you get
+
+- **Executable gates, not prose rules** — title, experience, compensation,
+  location, company-profile, source, and blocker filters in
+  `lib/role-filter.mjs`, enforced by `validate-pool.mjs` before any pool is
+  shown to you
+- **Authorization state machine** — nothing submits until you approve a
+  hashed pool (`tools/authorize-pool.mjs` → `verify-authorization.mjs`)
+- **Discovery with real geography** — `discovery/discover.py` (JobSpy) sweeps
+  Indeed/LinkedIn/ZipRecruiter/Google Jobs by city + radius
+- **Battle-tested form filling** — `docs/FORM_FILL_PLAYBOOK.md`: Greenhouse
+  react-select, typeahead, EEO, resume upload, reCAPTCHA policies, all
+  learned from real submissions
+- **Resume routing** — stack-matched resume variants per role, recorded in
+  the ledger so you can tune on conversion data
+- **Local dashboard** — `dashboard/server.mjs` on :4545
+- **125 tests** covering every gate and the authorization lifecycle
+- **Agent skill included** — `skills/browser-automation/` for reliable
+  multi-step browser work in OpenClaw
+
 ## Why this exists
 
 Before 2026-08-16 the campaign's hard filters were prose in a Markdown spec that a
