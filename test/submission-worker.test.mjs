@@ -19,6 +19,11 @@ async function fixture(fn){
 test('successful worker consumes destination once and respects its submission limit',()=>fixture(async(r,state,s,d,count)=>{
   await runSubmission(state,r,s,d,{submit:true});await runSubmission(state,r,s,d,{submit:true});assert.equal(count(),1);assert.equal(s.status().applications[0].state,'submitted');
 }));
+test('authorized dry run can proceed only through an explicit blocked retry',()=>fixture(async(r,state,s,d,count)=>{
+  await runSubmission(state,r,s,d);assert.equal(count(),0);
+  await runSubmission(state,r,s,d,{submit:true});assert.equal(count(),0);
+  await runSubmission(state,r,s,d,{submit:true,retryBlocked:true,retryReason:'Reviewed dry run; complete the same approved payload'});assert.equal(count(),1);
+}));
 test('post-submit timeout stays uncertain and is never automatically retried',()=>fixture(async(r,state,s,d,count)=>{
   d.submit=async()=>{throw new Error('Browser disconnected after clicking submit');};
   await runSubmission(state,r,s,d,{submit:true});assert.equal(s.status().applications[0].state,'uncertain');

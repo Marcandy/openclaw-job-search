@@ -1,10 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { EventStore } from '../lib/event-store.mjs';
+import { EventStore,applicationId } from '../lib/event-store.mjs';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 const record = { url: 'https://job-boards.greenhouse.io/acme/jobs/123', company:'Acme',title:'Engineer',location:'Chicago',source:'greenhouse' };
+test('Greenhouse legacy modern and embedded URLs share one destination claim',()=>{
+  assert.equal(applicationId(record.url),applicationId('https://boards.greenhouse.io/acme/jobs/123'));
+  assert.equal(applicationId(record.url),applicationId('https://job-boards.greenhouse.io/embed/job_app?for=acme&token=123'));
+  assert.notEqual(applicationId(record.url),applicationId('https://job-boards.greenhouse.io/acme/jobs/124'));
+});
 test('two database connections cannot claim a destination twice', () => {
   const dir=mkdtempSync(join(tmpdir(),'claims-')); const path=join(dir,'events.sqlite');
   const a=new EventStore(path), b=new EventStore(path);

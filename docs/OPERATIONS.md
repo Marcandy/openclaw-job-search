@@ -40,6 +40,8 @@ Run `npm ci --ignore-scripts` and `npx playwright install chromium`. `node tools
 
 All outcomes are durable SQLite events. Export them into the CSV after the run. Direct `append-ledger --status submitted` is refused. If the browser times out after a possible submission, stop and reconcile that uncertain result rather than restarting it. Keep one worker; recovery is explicit.
 
+After reviewing a dry run or resolving a known block, `--retry-blocked --retry-reason "<reason>"` permits a deliberate retry of blocked destinations within a valid manifest. It never retries submitted or uncertain destinations. Changed facts, consent or resume still require a new manifest and authorization. Legacy, modern and embedded Greenhouse URLs share a claim key for the same board/job ID.
+
 ## Recruiter outcomes and JobSync
 
 `outcomes import <messages.json>` accepts normalized messages with id, subject, body and occurredAt. `outcomes gmail [pageToken]` uses a caller-provided short-lived GMAIL_ACCESS_TOKEN with gmail.readonly scope and a dedicated GMAIL_JOB_LABEL. This connector uses GET only, does not send mail, and persists classifications/message IDs rather than bodies. It does not obtain or refresh OAuth credentials. Its page budget is bounded; pass the returned nextPageToken on the next invocation when processing larger inboxes. Connecting Gmail in another application does not supply these credentials automatically.
