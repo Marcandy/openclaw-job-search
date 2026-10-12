@@ -262,6 +262,7 @@ test('validate --write-state refuses to clobber an authorized batch', () => {
     assert.equal(run(validate, [candidates, '--write-state'], statePath).code, 0);
     const prepared = JSON.parse(readFileSync(statePath, 'utf8'));
     mkdirSync(join(dir, 'resumes')); writeFileSync(join(dir,'resumes','Resume_General.pdf'),'test resume');
+    writeFileSync(join(dir,'resumes','Resume_Python_React.pdf'),'test React resume');
     writeFileSync(join(dir,'applicant-facts.json'),JSON.stringify({version:'test',fields:{}}));
     prepared.submissionManifest = buildManifest(prepared, loadRuntime({CAMPAIGN_RUNTIME_ROOT:dir,CAMPAIGN_STATE_PATH:statePath}));
     writeFileSync(statePath,JSON.stringify(prepared));

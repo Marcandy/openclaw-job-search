@@ -162,10 +162,10 @@ if (unmatched.length) {
 
 console.log('=== HIGHEST-LEVERAGE ACTION ===');
 if (askable.length) {
-  console.log(`Answering ${askable.length} question${askable.length === 1 ? '' : 's'} would unblock roughly ${unblockable} application(s):`);
+  console.log(`Historical notes mention ${askable.length} fact categories across roughly ${unblockable} employers; reconcile them with applicant-facts.json and current forms before claiming they are still missing:`);
   for (const g of askable) console.log(`  - ${g.label}`);
   console.log('\nAdd confirmed answers to the approved-applicant-facts list in');
-  console.log('OPENCLAW_JOB_APPLICATION_AUTOMATION_SUMMARY.md. Never guess them.');
+  console.log('applicant-facts.json with source, confirmation date and allowed uses. Never guess them.');
 } else {
   console.log('No askable gaps outstanding.');
 }

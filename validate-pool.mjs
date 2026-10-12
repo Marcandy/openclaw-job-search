@@ -1,4 +1,4 @@
-import { loadRuntime } from './lib/runtime.mjs';
+import { loadRuntime, readJson } from './lib/runtime.mjs';
 /**
  * Pool authorization gate.
  *
@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { buildPool, buildBlockerIndex, canonicalizeUrl, normalizeCompany } from './lib/role-filter.mjs';
 import { atsOf, atsStats, parseCsv as parseLedgerCsv } from './tools/ats-stats.mjs';
+import { routeResume } from './lib/resume-routing.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -158,6 +159,9 @@ try {
 }
 
 const ledger = loadLedgerIndex(config.paths.ledgerCsv);
+const blockerMemoryPath = join(dirname(config.paths.state), 'blockers.json');
+try { ledger.structuredBlockers = readJson(blockerMemoryPath); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+try { ledger.facts = readJson(config.paths.facts); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 const pool = buildPool(candidates, config, ledger);
 
 // MEASURED ATS CONVERSION (added 2026-09-09)
@@ -279,6 +283,9 @@ if (writeState) {
         thrivingSignals: e.checks.companyProfile.validThrivingSignals,
         score: e.score, status: 'awaiting_authorization',
         uncertainties: e.uncertainties.map((u) => u.uncertainty),
+        ...routeResume(candidates.find(r => canonicalizeUrl(r.url) === e.canonicalUrl) ?? {}, config),
+        answers: candidates.find(r => canonicalizeUrl(r.url) === e.canonicalUrl)?.answers ?? {},
+        postingId: candidates.find(r => canonicalizeUrl(r.url) === e.canonicalUrl)?.postingId,
       });
       return [c.label, { primary: b.primary.map(strip), backup: b.backup.map(strip) }];
     })),

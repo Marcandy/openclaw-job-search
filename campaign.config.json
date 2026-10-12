@@ -1011,7 +1011,7 @@
     "receipts": "receipts"
   },
   "resumeRouting": {
-    "note": "Added 2026-10-08 from recruiter-event feedback: submit the resume variant that matches the role's primary stack instead of one generic resume for everything. Rules are evaluated in order; the first rule whose keywords appear in the posted title or description wins. Matching is case-insensitive on word boundaries. If no rule matches, fall back to paths.resume. The chosen variant and the matched rule must be recorded in the ledger notes for every submission, so resume-to-response conversion can be measured per variant later.",
+    "note": "Route by weighted title and required stack signals; equal signals require review. The executable routeResume function chooses the immutable variant before manifest approval.",
     "default": ".\\resumes\\Resume_General.pdf",
     "rules": [
       {
@@ -1054,7 +1054,8 @@
         "rationale": "Front-end-leaning roles use the Python/React variant, which leads with React/TypeScript front ends; both variants carry React, Redux, and TypeScript in every relevant role."
       }
     ],
-    "precedenceNote": "Order matters: a role mentioning both Java and Python routes to the Java variant because java-spring is listed first. Adjust rule order deliberately, with a test, if conversion data says otherwise."
+    "precedenceNote": "Rule order does not resolve equal scores. Backend-only Python roles route separately.",
+    "backendPython": "./resumes/Resume_Python_Backend.pdf"
   },
   "stateMachine": {
     "states": [
