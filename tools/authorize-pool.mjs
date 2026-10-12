@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Record the user's exact-destination authorization for today's validated pool.
  *
@@ -20,10 +20,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { poolHash } from '../lib/role-filter.mjs';
+import { manifestHash, validateManifest } from '../lib/submission-manifest.mjs';
+import { atomicJson } from '../lib/runtime.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const runtime = loadRuntime();
+const { config } = runtime;
 
 // Testability seam: lets the smoke test exercise the real code path against a
 // throwaway state file instead of the live campaign state.
@@ -56,11 +59,18 @@ if (state.status !== 'awaiting_authorization') {
 const entries = Object.values(state.pool ?? {}).flatMap((c) => [...(c.primary ?? []), ...(c.backup ?? [])]);
 const urls = entries.map((r) => r.canonicalUrl ?? r.url);
 const actual = poolHash(urls);
+let payloadHash;
+try {
+  if (!state.submissionManifest) throw new Error('Prepare a submission manifest first');
+  validateManifest(state.submissionManifest, runtime);
+  if (poolHash(state.submissionManifest.destinations.map(d => d.url)) !== actual) throw new Error('Manifest destinations differ from pool');
+  payloadHash = manifestHash(state.submissionManifest);
+} catch (err) { console.error(`REFUSED: ${err.message}`); process.exit(1); }
 
-if (actual !== confirmHash) {
+if (payloadHash !== confirmHash) {
   console.error('REFUSED: the confirmed hash does not match the current pool.');
   console.error(`  you confirmed: ${confirmHash}`);
-  console.error(`  current pool:  ${actual}`);
+  console.error(`  current manifest:  ${payloadHash}`);
   console.error('\nThe pool changed since it was shown to you. Re-read the pool report before authorizing.');
   process.exit(1);
 }
@@ -73,12 +83,14 @@ state.authorization = {
   authorizedAt: now,
   authorizedBy: by,
   poolHash: actual,
+  manifestHash: payloadHash,
+  expiresAt: state.submissionManifest.expiresAt,
   destinationCount: urls.length,
   exactUrls: urls,
   scope: 'Covers every destination listed above for this campaign date. Ordinary supported fields and the final submit action do not require further approval. Does not cover unknown personal facts, legal attestations, or CAPTCHA bypass.',
 };
 
-writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+atomicJson(statePath, state);
 
 console.log('AUTHORIZED.');
 console.log(`  campaign:     ${state.campaign} (${state.campaignDate})`);

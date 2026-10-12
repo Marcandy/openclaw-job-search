@@ -1,72 +1,29 @@
-# Setup — from fork to first application
+# Set up a campaign
 
-## 1. Install OpenClaw
-
-```bash
-npm install -g openclaw
-openclaw gateway --port 18789   # or your platform's service/scheduled-task setup
-```
-
-Any agent runtime that can drive a browser and run shell commands works —
-OpenClaw, Kimi Work, or a similar agent. The repo is the rules and tooling;
-the agent is the engine.
-
-## 2. Clone your fork
-
-```bash
-git clone https://github.com/<you>/openclaw-job-search.git
-cd openclaw-job-search
-```
-
-## 3. Personalize (nothing personal is committed)
-
-1. `cp applicant-brief.example.txt applicant-brief.txt` and fill it in.
-   This file is gitignored. The agent may only use facts from this file.
-2. Drop your resume PDFs into `resumes/` using the names in `resumes/README.md`
-   (gitignored), or edit `resumeRouting` in `campaign.config.json` to point at
-   your own paths.
-3. Edit `campaign.config.json`: your cities, daily quotas, salary floor,
-   title filters, and ATS preferences. Every rule is documented in `README.md`.
-
-> If you want git to stop seeing your personal edits to `campaign.config.json`:
-> `git update-index --skip-worktree campaign.config.json`
-
-## 4. Verify the install
-
-```bash
-node --test test/
-node validate-pool.mjs --help
-```
-
-All tests should pass on a clean clone.
-
-## 5. Run a campaign
-
-The loop, each run:
-
-1. **Discover** — `discovery/discover.py` (JobSpy wrapper) or agent web search
-   builds a lead list per city.
-2. **Gate** — `node validate-pool.mjs candidates-<date>.json --write-state`
-   must exit 0 before any pool is shown to you.
-3. **Authorize** — you approve the pool:
-   `node tools/authorize-pool.mjs --confirm-hash <poolHash> --by "<your-name>"`
-4. **Submit** — the agent fills applications following
-   `docs/FORM_FILL_PLAYBOOK.md`, logging every outcome to the CSV ledger.
-
-## 6. Optional: schedule it
-
-`sync-cron.ps1` regenerates the OpenClaw cron job after you change the
-schedule in `campaign.config.json`:
+Install Node 24.15+ and OpenClaw, clone the repository, then run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\sync-cron.ps1 -WhatIf   # preview
-powershell -ExecutionPolicy Bypass -File .\sync-cron.ps1           # apply
+npm ci --ignore-scripts
+npx playwright install chromium
+npm test
+$env:CAMPAIGN_RUNTIME_ROOT = Join-Path $env:USERPROFILE '.openclaw/job-search-runtime'
+$env:CAMPAIGN_PROFILE = 'fullstack'
+node tools/prepare-runtime.mjs
+node tools/runtime-doctor.mjs
 ```
 
-## Hard rules (do not remove)
+Put personal files under the runtime root, outside OneDrive or another cloud-sync directory. Copy `applicant-facts.example.json` to `applicant-facts.json`, confirm each known value and record its source and confirmation date. Unknown values stay null. Copy the approved PDF variants into `resumes/` with the names in config. Copy and personalize `boards.example.json` as `boards.json`. Keep private config overrides outside git and select them with CAMPAIGN_CONFIG_PATH. Re-run prepare-runtime after source or config changes.
 
-- No CAPTCHA or anti-bot workarounds. Ever.
-- No invented facts. Unknown required field → log `blocked`, pick a substitute.
-- Aggregators are discovery instruments, never application destinations.
-- Tests must pass before any rule change is merged. Rules change as rules —
-  never to let one specific role through.
+For existing deployments, follow the cutover section in [Operations](docs/OPERATIONS.md). Import the old ledger before any submission. Do not copy an old authorized state into the new workflow.
+
+1. Discover with `tools/poll-boards.mjs --out <leads.json>` and periodically use JobSpy for broader recall.
+2. Triage, verify employer postings and dated company evidence, and create candidates.
+3. Run `node validate-pool.mjs <candidates.json> --write-state`. Incomplete pools stay in research; only an explicit instructed city waiver can accept a shortfall.
+4. Supply each destination's answers map using confirmed fact keys, then run `node tools/prepare-submission.mjs`.
+5. Review the exact payload and approve its manifestHash with `node tools/authorize-pool.mjs --confirm-hash <manifestHash> --by <name>`.
+6. Run `node tools/verify-authorization.mjs`, then the narrow Greenhouse pilot with `node tools/submit-worker.mjs --submit`. Without --submit it fills an authorized batch but stops before final submission.
+7. Export the event ledger and track outcomes using the commands in Operations.
+
+Scheduling previews with `node tools/sync-cron.mjs`. Applying requires `--apply --cli <installed-openclaw.mjs>`. Verify readback and retire the previous schedule deliberately. Install the generated runtime skill in the skill directory used by your OpenClaw installation.
+
+No CAPTCHA bypass, invented facts, unapproved destinations or guessed legal consent. Real mailbox access, JobSync credentials and live form validation are separate deployment checks; synthetic tests do not establish live hiring conversion.

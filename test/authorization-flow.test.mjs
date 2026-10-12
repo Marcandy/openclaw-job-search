@@ -11,12 +11,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { poolHash } from '../lib/role-filter.mjs';
+import { poolHash, campaignToday } from '../lib/role-filter.mjs';
+import { loadRuntime } from '../lib/runtime.mjs';
+import { buildManifest, manifestHash } from '../lib/submission-manifest.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -34,7 +36,7 @@ function freshState(dir, overrides = {}) {
   const statePath = join(dir, 'state.json');
   const state = {
     campaign: 'newark-sanjose-chicago-3-2-2',
-    campaignDate: '2026-08-16',
+    campaignDate: campaignToday(config),
     status: 'awaiting_authorization',
     authorization: null,
     dailyQuota: { 'Newark, NJ': 3, 'San Jose, CA': 2, 'Chicago, IL': 2 },
@@ -46,6 +48,10 @@ function freshState(dir, overrides = {}) {
     },
     ...overrides,
   };
+  const resume = join(dir, 'resumes', 'Resume_General.pdf');
+  mkdirSync(dirname(resume), { recursive: true }); writeFileSync(resume, 'synthetic test resume');
+  writeFileSync(join(dir,'applicant-facts.json'), JSON.stringify({version:'test',fields:{}}));
+  if(state.status==='awaiting_authorization') { state.submissionManifest=buildManifest(state,loadRuntime({CAMPAIGN_RUNTIME_ROOT:dir,CAMPAIGN_STATE_PATH:statePath})); }
   writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
   return statePath;
 }
@@ -54,7 +60,7 @@ function freshState(dir, overrides = {}) {
 function run(script, args, statePath) {
   try {
     const stdout = execFileSync(process.execPath, [script, ...args], {
-      env: { ...process.env, CAMPAIGN_STATE_PATH: statePath },
+      env: { ...process.env, CAMPAIGN_STATE_PATH: statePath, CAMPAIGN_RUNTIME_ROOT: dirname(statePath) },
       encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
     });
     return { code: 0, stdout, stderr: '' };
@@ -90,7 +96,7 @@ test('authorize requires the hash the user was actually shown', () => {
 test('the happy path authorizes and then verifies clean', () => {
   withTempDir((dir) => {
     const statePath = freshState(dir);
-    const hash = poolHash(URLS);
+    const hash = manifestHash(JSON.parse(readFileSync(statePath,'utf8')).submissionManifest);
 
     const a = run(authorize, ['--confirm-hash', hash, '--by', 'Test User'], statePath);
     assert.equal(a.code, 0, a.stderr);
@@ -101,7 +107,7 @@ test('the happy path authorizes and then verifies clean', () => {
     assert.equal(state.researchOnly, false);
     assert.equal(state.authorization.authorizedBy, 'Test User');
     assert.equal(state.authorization.destinationCount, 3);
-    assert.equal(state.authorization.poolHash, hash);
+    assert.equal(state.authorization.manifestHash, hash);
 
     const v = run(verify, [], statePath);
     assert.equal(v.code, 0, v.stderr);
@@ -112,7 +118,7 @@ test('the happy path authorizes and then verifies clean', () => {
 test('swapping in an employer after authorization is detected and named', () => {
   withTempDir((dir) => {
     const statePath = freshState(dir);
-    run(authorize, ['--confirm-hash', poolHash(URLS), '--by', 'Test User'], statePath);
+    run(authorize, ['--confirm-hash', manifestHash(JSON.parse(readFileSync(statePath,'utf8')).submissionManifest), '--by', 'Test User'], statePath);
 
     // Simulate a later process substituting a destination the user never saw.
     const state = JSON.parse(readFileSync(statePath, 'utf8'));
@@ -131,7 +137,7 @@ test('swapping in an employer after authorization is detected and named', () => 
 test('adding an extra destination after authorization is detected', () => {
   withTempDir((dir) => {
     const statePath = freshState(dir);
-    run(authorize, ['--confirm-hash', poolHash(URLS), '--by', 'Test User'], statePath);
+    run(authorize, ['--confirm-hash', manifestHash(JSON.parse(readFileSync(statePath,'utf8')).submissionManifest), '--by', 'Test User'], statePath);
 
     const state = JSON.parse(readFileSync(statePath, 'utf8'));
     state.pool['San Jose, CA'].primary.push({ company: 'Extra', title: 'Software Engineer', canonicalUrl: 'https://jobs.ashbyhq.com/extra/bonus' });
@@ -146,7 +152,7 @@ test('adding an extra destination after authorization is detected', () => {
 test('reordering the pool does not trip the integrity check', () => {
   withTempDir((dir) => {
     const statePath = freshState(dir);
-    run(authorize, ['--confirm-hash', poolHash(URLS), '--by', 'Test User'], statePath);
+    run(authorize, ['--confirm-hash', manifestHash(JSON.parse(readFileSync(statePath,'utf8')).submissionManifest), '--by', 'Test User'], statePath);
 
     const state = JSON.parse(readFileSync(statePath, 'utf8'));
     state.pool['Newark, NJ'].primary.reverse();
@@ -159,7 +165,7 @@ test('reordering the pool does not trip the integrity check', () => {
 test('double authorization is refused', () => {
   withTempDir((dir) => {
     const statePath = freshState(dir);
-    const hash = poolHash(URLS);
+    const hash = manifestHash(JSON.parse(readFileSync(statePath,'utf8')).submissionManifest);
     assert.equal(run(authorize, ['--confirm-hash', hash], statePath).code, 0);
     const second = run(authorize, ['--confirm-hash', hash], statePath);
     assert.equal(second.code, 1);
@@ -203,7 +209,7 @@ function smokeCandidates(dir) {
     fitScore: 50,
     companyProfile: {
       headcount: 120, isHouseholdName: false,
-      thrivingSignals: [{ type: 'recent_funding_round', detail: 'Series B 2026', sourceUrl: 'https://example.com/x' }],
+      thrivingSignals: [{ type: 'recent_funding_round', detail: 'Series B 2026', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com/x' }],
     },
   });
   // Must satisfy the full 3 / 2 / 5 / 2 / 1x5 quota or the validator exits 1 on shortfall.
@@ -254,7 +260,13 @@ test('validate --write-state refuses to clobber an authorized batch', () => {
     const candidates = smokeCandidates(dir);
 
     assert.equal(run(validate, [candidates, '--write-state'], statePath).code, 0);
-    const hash = JSON.parse(readFileSync(statePath, 'utf8')).poolHash;
+    const prepared = JSON.parse(readFileSync(statePath, 'utf8'));
+    mkdirSync(join(dir, 'resumes')); writeFileSync(join(dir,'resumes','Resume_General.pdf'),'test resume');
+    writeFileSync(join(dir,'resumes','Resume_Python_React.pdf'),'test React resume');
+    writeFileSync(join(dir,'applicant-facts.json'),JSON.stringify({version:'test',fields:{}}));
+    prepared.submissionManifest = buildManifest(prepared, loadRuntime({CAMPAIGN_RUNTIME_ROOT:dir,CAMPAIGN_STATE_PATH:statePath}));
+    writeFileSync(statePath,JSON.stringify(prepared));
+    const hash = manifestHash(prepared.submissionManifest);
     assert.equal(run(authorize, ['--confirm-hash', hash, '--by', 'Test User'], statePath).code, 0);
 
     const r = run(validate, [candidates, '--write-state'], statePath);
@@ -263,6 +275,6 @@ test('validate --write-state refuses to clobber an authorized batch', () => {
 
     const after = JSON.parse(readFileSync(statePath, 'utf8'));
     assert.equal(after.status, 'authorized', 'the authorization must survive');
-    assert.equal(after.authorization.poolHash, hash);
+    assert.equal(after.authorization.manifestHash, hash);
   });
 });

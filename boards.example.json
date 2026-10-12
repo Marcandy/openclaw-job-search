@@ -1,0 +1,5 @@
+{
+  "boards": [
+    { "platform": "greenhouse", "slug": "example", "company": "Replace with a verified employer", "verifiedSource": "https://example.com/careers" }
+  ]
+}

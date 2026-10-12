@@ -45,7 +45,7 @@ function goodRole(overrides = {}) {
       headcount: 120,
       isHouseholdName: false,
       thrivingSignals: [
-        { type: 'recent_funding_round', detail: 'Series B, $28M, 2026-04', sourceUrl: 'https://example.com/funding' },
+        { type: 'recent_funding_round', detail: 'Series B, $28M, 2026-04', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com/funding' },
       ],
     },
     ...overrides,
@@ -501,7 +501,7 @@ test('a small, unknown, thriving company is primary-eligible', () => {
 test('an enterprise employer can never be primary', () => {
   const r = checkCompanyProfile(goodRole({
     company: 'Globex Manufacturing',
-    companyProfile: { headcount: 42000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'grew 12% in 2026', sourceUrl: 'https://example.com' }] },
+    companyProfile: { headcount: 42000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'grew 12% in 2026', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com' }] },
   }), config);
   assert.equal(r.primaryEligible, false);
   assert.ok(r.primaryFailures.some((f) => f.includes('not primary-eligible')));
@@ -510,7 +510,7 @@ test('an enterprise employer can never be primary', () => {
 test('a large employer needs an explicit overrideReason even for a backup slot', () => {
   const base = {
     company: 'Globex Manufacturing',
-    companyProfile: { headcount: 42000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'grew 12%', sourceUrl: 'https://example.com' }] },
+    companyProfile: { headcount: 42000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'grew 12%', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com' }] },
   };
   assert.equal(checkCompanyProfile(goodRole(base), config).ok, false, 'no overrideReason -> fails both buckets');
   assert.equal(checkCompanyProfile(goodRole({ ...base, overrideReason: 'Exact React/Spring Boot stack match at the posted level.' }), config).ok, true);
@@ -518,7 +518,7 @@ test('a large employer needs an explicit overrideReason even for a backup slot',
 
 test('household-name deny list fires even when the researcher forgets the flag', () => {
   for (const company of ['Prudential Financial', 'Western Digital', 'NetApp', 'PSEG', 'Broadridge Financial Solutions', 'Maximus', 'NXP Semiconductors']) {
-    const r = checkCompanyProfile(goodRole({ company, companyProfile: { headcount: 150, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] } }), config);
+    const r = checkCompanyProfile(goodRole({ company, companyProfile: { headcount: 150, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] } }), config);
     assert.equal(r.isHouseholdName, true, `${company} should be detected as a household name`);
     assert.equal(r.primaryEligible, false, `${company} must not be primary-eligible`);
   }
@@ -530,7 +530,7 @@ test('2026-08-19 regression: concatenated brand spellings still hit the deny lis
   for (const company of ['JPMorganChase', 'JPMorgan Chase & Co.', 'BankofAmerica', 'GoldmanSachs']) {
     const r = checkCompanyProfile(goodRole({
       company,
-      companyProfile: { headcount: 500, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+      companyProfile: { headcount: 500, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
     }), config, newark);
     assert.equal(r.isHouseholdName, true, `${company} must be detected`);
     assert.equal(r.primaryEligible, false, `${company} must not be primary-eligible`);
@@ -541,7 +541,7 @@ test('the corridor banks and casinos are all denied', () => {
   for (const company of ['RBC', 'Royal Bank of Canada', 'Caesars Sportsbook & Casino', 'Amazon Web Services', 'Bank of America']) {
     const r = checkCompanyProfile(goodRole({
       company,
-      companyProfile: { headcount: 900, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+      companyProfile: { headcount: 900, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
     }), config, newark);
     assert.equal(r.primaryEligible, false, `${company} must not reach primary`);
   }
@@ -566,7 +566,7 @@ test('deny-list matching does not fire on unrelated substrings', () => {
 // --- per-city headcount ceiling (user instruction 2026-08-16) ---
 
 test('the Newark corridor raises its primary headcount ceiling to 30000', () => {
-  const midsize = { headcount: 14000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'grew 8% in 2026', sourceUrl: 'https://e.com' }] };
+  const midsize = { headcount: 14000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'grew 8% in 2026', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] };
   const role = goodRole({ company: 'Ironbound Regional Systems', companyProfile: midsize });
 
   const inNewark = checkCompanyProfile(role, config, newark);
@@ -582,7 +582,7 @@ test('the Newark corridor raises its primary headcount ceiling to 30000', () => 
 
 test('San Jose and Chicago raise their primary headcount ceiling to 5000', () => {
   const sanJose = config.cities.find((c) => c.id === 'san-jose');
-  const midsize = { headcount: 4200, isHouseholdName: false, thrivingSignals: [{ type: 'revenue_growth_public_statement', detail: 'up 30% in 2026', sourceUrl: 'https://e.com' }] };
+  const midsize = { headcount: 4200, isHouseholdName: false, thrivingSignals: [{ type: 'revenue_growth_public_statement', detail: 'up 30% in 2026', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] };
   const role = goodRole({ company: 'Midsize Systems', companyProfile: midsize });
 
   for (const city of [sanJose, chicago]) {
@@ -594,7 +594,7 @@ test('San Jose and Chicago raise their primary headcount ceiling to 5000', () =>
 
 test('the 5000 ceiling is a hard bound for San Jose and Chicago', () => {
   const sanJose = config.cities.find((c) => c.id === 'san-jose');
-  const tooBig = { headcount: 6000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] };
+  const tooBig = { headcount: 6000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] };
   for (const city of [sanJose, chicago]) {
     const r = checkCompanyProfile(goodRole({ company: 'Just Over Co', companyProfile: tooBig }), config, city);
     assert.equal(r.primaryEligible, false, `${city.label} must reject 6000`);
@@ -607,7 +607,7 @@ test('the raised ceilings do not admit household names anywhere', () => {
   // Well under 5000, but on the deny list.
   const r = checkCompanyProfile(goodRole({
     company: 'NetApp',
-    companyProfile: { headcount: 3000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+    companyProfile: { headcount: 3000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
   }), config, sanJose);
   assert.equal(r.isHouseholdName, true, 'deny list still fires inside the raised ceiling');
   assert.equal(r.primaryEligible, false);
@@ -617,7 +617,7 @@ test('every city ceiling still requires a numeric headcount, never a bare band',
   const sanJose = config.cities.find((c) => c.id === 'san-jose');
   for (const city of [newark, sanJose, chicago]) {
     const r = checkCompanyProfile(goodRole({
-      companyProfile: { headcountBand: 'mid', isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+      companyProfile: { headcountBand: 'mid', isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
     }), config, city);
     assert.equal(r.primaryEligible, false, `${city.label} must not accept a band label in place of a number`);
     assert.ok(r.primaryFailures.some((f) => f.includes('numeric headcount')), JSON.stringify(r.primaryFailures));
@@ -626,7 +626,7 @@ test('every city ceiling still requires a numeric headcount, never a bare band',
 
 test('the Newark ceiling is a hard bound, not an unlimited pass', () => {
   // 30,000 is the corridor ceiling; Prudential (~40k) and Maximus (~35k) sit above it.
-  const tooBig = { headcount: 40000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] };
+  const tooBig = { headcount: 40000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] };
   const r = checkCompanyProfile(goodRole({ company: 'Enormous Co', companyProfile: tooBig }), config, newark);
   assert.equal(r.primaryEligible, false);
   assert.ok(r.primaryFailures.some((f) => f.includes('exceeds the')), JSON.stringify(r.primaryFailures));
@@ -639,7 +639,7 @@ test('the Newark ceiling is a hard bound, not an unlimited pass', () => {
 test('the Newark ceiling raises size only - household names still cannot be primary', () => {
   const r = checkCompanyProfile(goodRole({
     company: 'Prudential',
-    companyProfile: { headcount: 15000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+    companyProfile: { headcount: 15000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
   }), config, newark);
   assert.equal(r.isHouseholdName, true, 'deny list still fires');
   assert.equal(r.primaryEligible, false, 'a household name must not reach primary even inside the raised ceiling');
@@ -657,7 +657,7 @@ test('the Newark ceiling still requires a verified thriving signal', () => {
 test('a company inside the Newark ceiling needs no overrideReason for a backup slot', () => {
   const r = checkCompanyProfile(goodRole({
     company: 'Ironbound Regional Systems',
-    companyProfile: { headcount: 14000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+    companyProfile: { headcount: 14000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
   }), config, newark);
   assert.equal(r.ok, true);
   assert.equal(r.backupFailures.length, 0);
@@ -666,7 +666,7 @@ test('a company inside the Newark ceiling needs no overrideReason for a backup s
 test('a bare headcountBand cannot satisfy a numeric city ceiling', () => {
   const r = checkCompanyProfile(goodRole({
     company: 'Bandonly Co',
-    companyProfile: { headcountBand: 'large', isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] },
+    companyProfile: { headcountBand: 'large', isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] },
   }), config, newark);
   assert.equal(r.primaryEligible, false);
   assert.ok(r.primaryFailures.some((f) => f.includes('needs a numeric headcount')));
@@ -684,8 +684,8 @@ test('thriving signals without a sourceUrl or detail do not count', () => {
       headcount: 120, isHouseholdName: false,
       thrivingSignals: [
         { type: 'recent_funding_round', detail: 'Series A' },                       // no sourceUrl
-        { type: 'vibes', detail: 'seems good', sourceUrl: 'https://example.com' },  // bad type
-        { type: 'headcount_growth', sourceUrl: 'https://example.com' },             // no detail
+        { type: 'vibes', detail: 'seems good', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com' },  // bad type
+        { type: 'headcount_growth', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com' },             // no detail
       ],
     },
   }), config);
@@ -975,7 +975,7 @@ test('buildPool never places a banned title anywhere in either bucket', () => {
 test('large-company backups are ordered after eligible small-company backups', () => {
   const roles = [
     goodRole({ company: 'Globex Manufacturing', url: 'https://jobs.ashbyhq.com/acme/big', overrideReason: 'exact stack match', fitScore: 99,
-      companyProfile: { headcount: 42000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', sourceUrl: 'https://e.com' }] } }),
+      companyProfile: { headcount: 42000, isHouseholdName: false, thrivingSignals: [{ type: 'headcount_growth', detail: 'x', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://e.com' }] } }),
     goodRole({ company: 'Tiny Co A', url: 'https://jobs.ashbyhq.com/acme/s1', fitScore: 10 }),
     goodRole({ company: 'Tiny Co B', url: 'https://jobs.ashbyhq.com/acme/s2', fitScore: 10 }),
     goodRole({ company: 'Tiny Co C', url: 'https://jobs.ashbyhq.com/acme/s3', fitScore: 10 }),

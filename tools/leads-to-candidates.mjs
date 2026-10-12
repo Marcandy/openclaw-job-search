@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Turn a discovery sweep into a triage worksheet for the research agent.
  *
@@ -23,7 +23,7 @@ import { checkTitle, checkRoleRelevance, checkLocation, normalizeCompany, canoni
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const { config } = loadRuntime();
 
 /**
  * Minimal CSV read so triage can consult the ledger's known-blocker companies.

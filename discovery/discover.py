@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -59,7 +60,7 @@ except ImportError:
              "  .venv\\Scripts\\python.exe -m pip install python-jobspy")
 
 HERE = Path(__file__).resolve().parent
-CONFIG = json.loads((HERE.parent / "campaign.config.json").read_text(encoding="utf-8-sig"))
+CONFIG = json.loads(subprocess.check_output(["node", str(HERE.parent / "tools" / "runtime-config.mjs")], encoding="utf-8"))
 
 # Search terms aimed at the campaign's target roles. Kept broad on purpose:
 # the deterministic gates in lib/role-filter.mjs do the narrowing afterwards, so

@@ -1,0 +1,10 @@
+{
+  "version": "replace-after-confirming-facts",
+  "fields": {
+    "firstName": { "value": null, "source": "unconfirmed", "confirmedAt": "", "uses": ["application"] },
+    "lastName": { "value": null, "source": "unconfirmed", "confirmedAt": "", "uses": ["application"] },
+    "email": { "value": null, "source": "unconfirmed", "confirmedAt": "", "uses": ["application"] },
+    "phone": { "value": null, "source": "unconfirmed", "confirmedAt": "", "uses": ["application"] },
+    "authorizedToWork": { "value": null, "source": "unconfirmed", "confirmedAt": "", "uses": ["application"] }
+  }
+}

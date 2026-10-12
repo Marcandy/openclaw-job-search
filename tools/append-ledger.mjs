@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Append one row to the application ledger CSV. Never overwrites existing rows.
  *
@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const { config } = loadRuntime();
 
 const args = process.argv.slice(2);
 const get = (k) => {
@@ -31,6 +31,10 @@ const status = get('status');
 if (!status || !KNOWN.has(status)) {
   console.error(`FATAL: --status must be one of ${[...KNOWN].join(', ')}`);
   process.exit(2);
+}
+if (status === 'submitted') {
+  console.error('REFUSED: submitted events require the manifest-bound submission worker and receipt. Export its events into the CSV ledger.');
+  process.exit(1);
 }
 for (const k of ['company', 'title', 'location', 'url', 'source']) {
   if (!get(k)) { console.error(`FATAL: --${k} is required`); process.exit(2); }
