@@ -209,7 +209,7 @@ function smokeCandidates(dir) {
     fitScore: 50,
     companyProfile: {
       headcount: 120, isHouseholdName: false,
-      thrivingSignals: [{ type: 'recent_funding_round', detail: 'Series B 2026', sourceUrl: 'https://example.com/x' }],
+      thrivingSignals: [{ type: 'recent_funding_round', detail: 'Series B 2026', asOf: new Date().toISOString().slice(0,10), sourceUrl: 'https://example.com/x' }],
     },
   });
   // Must satisfy the full 3 / 2 / 5 / 2 / 1x5 quota or the validator exits 1 on shortfall.

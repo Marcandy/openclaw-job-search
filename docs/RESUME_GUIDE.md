@@ -20,6 +20,12 @@ Never submit one generic resume to every posting. `campaign.config.json` →
 The matched rule is recorded in the application ledger so per-variant
 response rates can be measured and the routing tuned on evidence.
 
+`lib/resume-routing.mjs` implements weighted title and required-stack matching.
+Preferred technologies do not outweigh required ones. Equal stack scores mark
+the default selection as ambiguous for review. Backend-only Python roles use
+the backend variant. The chosen PDF bytes are hashed into the submission
+manifest; edits require fresh approval.
+
 ## 2. Bullets are clear, complete sentences with varied structure
 
 - Every bullet is a full, readable sentence — verb, object, outcome.

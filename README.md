@@ -10,6 +10,12 @@ job hunting into a gated pipeline: **discover → validate → authorize → sub
 See [SETUP.md](SETUP.md) for the 10-minute path from fork to first
 application.**
 
+The runtime now requires Node 24.15+ and `npm ci --ignore-scripts`. Start with
+[Operations](docs/OPERATIONS.md): one runtime root, explicit profiles, cached
+official ATS discovery, executable resume routing, expiring payload manifests,
+SQLite destination claims, and recruiter-outcome tracking. Personal runtime files
+default to `~/.openclaw/job-search-runtime`, outside the repository.
+
 > Nothing personal is in this repo — your applicant brief, resumes, and
 > ledger are all gitignored by design. See `applicant-brief.example.txt`
 > and `resumes/README.md`.
@@ -21,7 +27,7 @@ application.**
   `lib/role-filter.mjs`, enforced by `validate-pool.mjs` before any pool is
   shown to you
 - **Authorization state machine** — nothing submits until you approve a
-  hashed pool (`tools/authorize-pool.mjs` → `verify-authorization.mjs`)
+  hashed submission manifest (`prepare-submission.mjs` → `authorize-pool.mjs` → `verify-authorization.mjs`)
 - **Discovery with real geography** — `discovery/discover.py` (JobSpy) sweeps
   Indeed/LinkedIn/ZipRecruiter/Google Jobs by city + radius
 - **Battle-tested form filling** — `docs/FORM_FILL_PLAYBOOK.md`: Greenhouse
@@ -30,7 +36,7 @@ application.**
 - **Resume routing** — stack-matched resume variants per role, recorded in
   the ledger so you can tune on conversion data
 - **Local dashboard** — `dashboard/server.mjs` on :4545
-- **125 tests** covering every gate and the authorization lifecycle
+- **Regression and browser tests** covering gates, payload approval, crash recovery and synthetic forms
 - **Agent skill included** — `skills/browser-automation/` for reliable
   multi-step browser work in OpenClaw
 
@@ -56,6 +62,11 @@ and ceilings for your own search:
 | San Jose, CA | 2 | 3 | 5,000 |
 | Chicago, IL | 5 | 3 | 5,000 |
 | Atlanta, GA | 2 | 3 | 5,000 |
+| San Diego, CA | 1 | 2 | 5,000 |
+| Sacramento, CA | 1 | 2 | 5,000 |
+| Washington, DC | 1 | 2 | 5,000 |
+| Houston, TX | 1 | 2 | 5,000 |
+| Baltimore, MD | 1 | 2 | 5,000 |
 
 The Newark market is a **corridor**: Newark, East Newark, Jersey City, Harrison, and
 Hoboken. New York City never counts — a 15-mile sweep from Newark returns 158
@@ -188,18 +199,20 @@ research run  ->  candidates-<date>.json
               ->  MUST exit 0 before the pool may be shown to the user
               ->  status: awaiting_authorization, poolHash printed
 
-user approves ->  node tools/authorize-pool.mjs --confirm-hash <poolHash> --by "<your-name>"
+prepare       ->  node tools/prepare-submission.mjs (prints exact payload and manifestHash)
+user approves ->  node tools/authorize-pool.mjs --confirm-hash <manifestHash> --by "<your-name>"
               ->  status: authorized
 
 submission    ->  node tools/verify-authorization.mjs
-              ->  one-shot agent with ../openclaw-tri-city-submit.txt
+              ->  node tools/submit-worker.mjs --submit (Greenhouse pilot)
+              ->  node tools/application-events.mjs export-ledger
 ```
 
 ## Commands
 
 ```powershell
-# tests (88 total)
-node --test test/role-filter.test.mjs test/authorization-flow.test.mjs
+# tests, including synthetic Chromium forms
+npm test
 
 # validate a candidate set
 node validate-pool.mjs candidates-2026-08-16.json

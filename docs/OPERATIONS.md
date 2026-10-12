@@ -32,6 +32,8 @@ Copy `boards.example.json` to the runtime's `boards.json` and replace the exampl
 
 `blocker-memory record <file.json>` records scoped blockers with ID, company, reason, kind, scope and expiresAt. Role scope requires a URL; form scope requires a version. Confirmed exact facts resolve only fact gaps, while policy and consent blocks remain. Legacy prose blockers are conservative and require manual reconciliation; their historical gap counts are not claims of currently missing facts.
 
+`company-evidence record <evidence.json>` verifies dated public-source excerpts before caching company evidence. `get <company>` reuses it for up to 30 days; signal dates must still be within 24 months. Candidate signals require an explicit asOf date. A company headcount may be a sourced headcountMin/headcountMax interval: its upper bound determines size eligibility instead of inventing an exact count. The cache validates excerpts; interpret their meaning and headcount evidence deliberately rather than equating funding with hiring quality.
+
 ## Browser pilot
 
 Run `npm ci --ignore-scripts` and `npx playwright install chromium`. `node tools/submit-worker.mjs` fills only an already authorized manifest and stops before final submit. `--submit` uses the same authorization for final submission. The narrow adapter supports Greenhouse text fields, native selects, checkboxes and one resume upload. Custom comboboxes, unknown required questions, additional documents, account walls and CAPTCHA block. It is not a replacement for the complete browser playbook yet. A fresh browser profile has no login access. Resume uploads use bytes hashed before filling; authorization is re-read before filling and immediately before final submit. No autonomous authorization command is available inside the adapter.
@@ -40,7 +42,7 @@ All outcomes are durable SQLite events. Export them into the CSV after the run. 
 
 ## Recruiter outcomes and JobSync
 
-`outcomes import <messages.json>` accepts normalized messages with id, subject, body and occurredAt. `outcomes gmail` uses a caller-provided short-lived GMAIL_ACCESS_TOKEN with gmail.readonly scope and a dedicated GMAIL_JOB_LABEL. This connector uses GET only, does not send mail, and persists classifications/message IDs rather than bodies. It does not obtain or refresh OAuth credentials. Its page budget is bounded; follow the returned nextPageToken when processing larger inboxes. Connecting Gmail in another application does not supply these credentials automatically.
+`outcomes import <messages.json>` accepts normalized messages with id, subject, body and occurredAt. `outcomes gmail [pageToken]` uses a caller-provided short-lived GMAIL_ACCESS_TOKEN with gmail.readonly scope and a dedicated GMAIL_JOB_LABEL. This connector uses GET only, does not send mail, and persists classifications/message IDs rather than bodies. It does not obtain or refresh OAuth credentials. Its page budget is bounded; pass the returned nextPageToken on the next invocation when processing larger inboxes. Connecting Gmail in another application does not supply these credentials automatically.
 
 `outcomes funnel [minimum-age-days]` groups unique submitted destinations and confirmed recruiter outcomes by source, profile and resume. Ambiguous messages stay in review. The default seven-day cohort delay prevents comparing yesterday's applications directly with older cohorts. Classification fixtures establish deterministic behavior, not accuracy on the user's real mailbox.
 

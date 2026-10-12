@@ -33,7 +33,7 @@
     {
       "version": 7,
       "date": "2026-10-12",
-      "changes": "Canonical runtime paths, explicit profiles, generated deployment identity, manifest-bound recoverable submissions and outcome tracking."
+      "changes": "Canonical runtime paths, explicit profiles, generated deployment identity, manifest-bound recoverable submissions and outcome tracking. Includes dated evidence enforcement and conservative sourced headcount intervals."
     }
   ],
   "cities": [
@@ -899,7 +899,8 @@
     "thrivingSignalRequirements": {
       "eachSignalNeedsSourceUrl": true,
       "maxSignalAgeMonths": 24,
-      "note": "A thriving signal must be a specific, dated, publicly verifiable fact with a source URL. 'Seems to be doing well' is not a signal. Do not invent or infer signals."
+      "note": "A thriving signal must be a specific, dated, publicly verifiable fact with a source URL. 'Seems to be doing well' is not a signal. Do not invent or infer signals.",
+      "requireDatedSignals": true
     }
   },
   "sourceFilter": {

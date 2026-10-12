@@ -2,7 +2,7 @@
 
 Pull requests are welcome. Ground rules:
 
-1. **Tests must stay green.** Run `node --test test/*.test.mjs` — currently 125/125.
+1. **Tests must stay green.** Install with `npm ci --ignore-scripts`, install Chromium with `npx playwright install chromium`, then run `npm test`. CI checks Windows and Linux.
 2. **Rules are code, not prose.** If you change a filter's behavior, change
    `lib/role-filter.mjs` and add a test. Do not document a rule without
    implementing it.
