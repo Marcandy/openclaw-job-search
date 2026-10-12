@@ -18,10 +18,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { poolHash, canonicalizeUrl } from '../lib/role-filter.mjs';
+import { verifyManifestAuthorization } from '../lib/submission-manifest.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const { config } = loadRuntime();
+const runtime = loadRuntime();
+const { config } = runtime;
 const wantJson = process.argv.includes('--json');
 
 // Testability seam: see the matching note in authorize-pool.mjs.
@@ -41,7 +43,7 @@ const fail = (msg, extra = {}) => {
   process.exit(1);
 };
 
-if (state.status !== 'authorized') {
+if (!['authorized', 'submitting'].includes(state.status)) {
   fail(`state status is "${state.status}", expected "authorized". Submission must not run.`, { status: state.status });
 }
 const auth = state.authorization;
@@ -73,11 +75,16 @@ if (liveHash !== authorizedHash) {
   );
 }
 
+try { verifyManifestAuthorization(state, runtime); }
+catch (err) { fail(err.message); }
+
 const result = {
   ok: true,
   campaign: state.campaign,
   campaignDate: state.campaignDate,
   poolHash: liveHash,
+  manifestHash: auth.manifestHash,
+  expiresAt: state.submissionManifest.expiresAt,
   authorizedAt: auth.authorizedAt,
   authorizedBy: auth.authorizedBy,
   destinationCount: livePoolUrls.length,
