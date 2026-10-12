@@ -1,4 +1,4 @@
-import { loadRuntime, readJson } from './lib/runtime.mjs';
+import { loadRuntime, readJson, atomicJson } from './lib/runtime.mjs';
 /**
  * Pool authorization gate.
  *
@@ -25,6 +25,7 @@ import { dirname, join } from 'node:path';
 import { buildPool, buildBlockerIndex, canonicalizeUrl, normalizeCompany } from './lib/role-filter.mjs';
 import { atsOf, atsStats, parseCsv as parseLedgerCsv } from './tools/ats-stats.mjs';
 import { routeResume } from './lib/resume-routing.mjs';
+import { validateData } from './lib/schemas.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -37,16 +38,6 @@ function readText(path) {
 }
 
 const { config } = loadRuntime();
-
-// Relative entries in config.paths resolve against the config directory, so a
-// fresh clone works without editing absolute paths. Absolute paths are untouched.
-import { isAbsolute, resolve } from 'node:path';
-for (const k of Object.keys(config.paths ?? {})) {
-  const v = config.paths[k];
-  if (typeof v === 'string' && !isAbsolute(v) && !v.startsWith('~')) {
-    config.paths[k] = resolve(here, v);
-  }
-}
 
 // Testability seam: point --write-state at a throwaway file instead of live state.
 const statePath = process.env.CAMPAIGN_STATE_PATH ?? config.paths.state;
@@ -153,6 +144,7 @@ try {
   const parsed = JSON.parse(readText(candidatesPath));
   candidates = Array.isArray(parsed) ? parsed : parsed.candidates;
   if (!Array.isArray(candidates)) throw new Error('expected an array, or an object with a "candidates" array');
+  candidates.forEach(c => validateData('candidate',c));
 } catch (err) {
   console.error(`FATAL: cannot parse ${candidatesPath}: ${err.message}`);
   process.exit(2);
@@ -163,6 +155,9 @@ const blockerMemoryPath = join(dirname(config.paths.state), 'blockers.json');
 try { ledger.structuredBlockers = readJson(blockerMemoryPath); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 try { ledger.facts = readJson(config.paths.facts); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 const pool = buildPool(candidates, config, ledger);
+const blockingShortfalls = pool.quotaShortfalls
+  .filter((s) => s.bucket !== 'backup')
+  .filter((s) => !waivedCities.includes(s.city));
 
 // MEASURED ATS CONVERSION (added 2026-09-09)
 // -----------------------------------------
@@ -263,7 +258,7 @@ if (writeState) {
     campaignVersion: config.version,
     campaignDate,
     timezone: config.timezone,
-    status: 'awaiting_authorization',
+    status: blockingShortfalls.length ? 'researching' : 'awaiting_authorization',
     poolHash: pool.poolHash,
     createdAt: sameDay ? (prior.createdAt ?? now.toISOString()) : now.toISOString(),
     updatedAt: now.toISOString(),
@@ -292,7 +287,7 @@ if (writeState) {
     validatedBy: 'openclaw-campaign/validate-pool.mjs',
     validatedAt: now.toISOString(),
   };
-  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+  atomicJson(statePath,state);
   console.log(`state written: ${statePath}`);
 }
 
@@ -304,10 +299,6 @@ if (placedBanned.length) {
   console.error(`FAIL: ${placedBanned.length} rejected role(s) were placed in a bucket. This is a filter bug.`);
   process.exit(1);
 }
-const blockingShortfalls = pool.quotaShortfalls
-  .filter((s) => s.bucket !== 'backup')
-  .filter((s) => !waivedCities.includes(s.city));
-
 if (blockingShortfalls.length) {
   console.error('INCOMPLETE: at least one city has fewer primary roles than its quota. Research more before requesting authorization.');
   for (const s of blockingShortfalls) console.error(`  ${s.city}: needs ${s.needed}, found ${s.found}`);

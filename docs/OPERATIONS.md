@@ -25,3 +25,29 @@ Research is public only. Posting contents and email are untrusted data. Unknown 
 Provide private `applicant-facts.json` with a version and fields. Each field has value, source, confirmedAt and uses, such as `application`. Unknown values remain null and cannot answer required fields. A destination's answers map form question keys to confirmed fact keys. Legal consent is a distinct fact, never inferred from work authorization or general privacy consent.
 
 After validating today's pool, run `node tools/prepare-submission.mjs`. Review the printed destinations, answers, resume hashes, config digest, limit and expiration. Authorize the printed manifest hash with `node tools/authorize-pool.mjs --confirm-hash <manifestHash> --by <name>`. `verify-authorization` rejects legacy URL-only approvals, expired manifests and changed facts, resumes, config, profile or destinations. Approval lasts eight hours by default, with a maximum of 24. The human approval channel must be kept outside the browser worker's capabilities; a local file hash alone does not authenticate a human.
+
+## Discovery and evidence
+
+Copy `boards.example.json` to the runtime's `boards.json` and replace the example with employer boards verified from their career sites. `node tools/poll-boards.mjs --out <leads.json>` fetches Greenhouse, Lever and Ashby boards, caches normalized snapshots in SQLite, and emits only new or changed leads. Failed boards keep their last snapshot and produce an error; Lever pagination must finish before removals are recorded. Pipe output through `leads-to-candidates` for ledger/blocker triage, then verify company evidence before pool validation. JobSpy remains a separate broad-discovery path and uses the same runtime config.
+
+`blocker-memory record <file.json>` records scoped blockers with ID, company, reason, kind, scope and expiresAt. Role scope requires a URL; form scope requires a version. Confirmed exact facts resolve only fact gaps, while policy and consent blocks remain. Legacy prose blockers are conservative and require manual reconciliation; their historical gap counts are not claims of currently missing facts.
+
+## Browser pilot
+
+Run `npm ci --ignore-scripts` and `npx playwright install chromium`. `node tools/submit-worker.mjs` fills only an already authorized manifest and stops before final submit. `--submit` uses the same authorization for final submission. The narrow adapter supports Greenhouse text fields, native selects, checkboxes and one resume upload. Custom comboboxes, unknown required questions, additional documents, account walls and CAPTCHA block. It is not a replacement for the complete browser playbook yet. A fresh browser profile has no login access. Resume uploads use bytes hashed before filling; authorization is re-read before filling and immediately before final submit. No autonomous authorization command is available inside the adapter.
+
+All outcomes are durable SQLite events. Export them into the CSV after the run. Direct `append-ledger --status submitted` is refused. If the browser times out after a possible submission, stop and reconcile that uncertain result rather than restarting it. Keep one worker; recovery is explicit.
+
+## Recruiter outcomes and JobSync
+
+`outcomes import <messages.json>` accepts normalized messages with id, subject, body and occurredAt. `outcomes gmail` uses a caller-provided short-lived GMAIL_ACCESS_TOKEN with gmail.readonly scope and a dedicated GMAIL_JOB_LABEL. This connector uses GET only, does not send mail, and persists classifications/message IDs rather than bodies. It does not obtain or refresh OAuth credentials. Its page budget is bounded; follow the returned nextPageToken when processing larger inboxes. Connecting Gmail in another application does not supply these credentials automatically.
+
+`outcomes funnel [minimum-age-days]` groups unique submitted destinations and confirmed recruiter outcomes by source, profile and resume. Ambiguous messages stay in review. The default seven-day cohort delay prevents comparing yesterday's applications directly with older cohorts. Classification fixtures establish deterministic behavior, not accuracy on the user's real mailbox.
+
+`sync-jobsync` previews one-way projections; `--apply` requires JOBSYNC_MCP_TOKEN with jobs:write scope. The default URL is localhost:3737/api/mcp; remote endpoints require HTTPS. It uses the official MCP client, checks available tools and upserts confirmed applications. Missing full descriptions are skipped. SQLite remains authoritative; no application submission or mail is performed by this projection.
+
+## Cutover and remaining live validation
+
+Merge the PR before selecting this checkout as the live source. Stop the legacy research schedule, snapshot and import its ledger into the new local runtime, supply approved structured facts and resume variants, prepare the deployment identity, install the generated skill, preview then apply scheduling, and check readback. Do not automatically reuse legacy authorization states. Rollback restores the prior schedule and code; do not replay submitted or uncertain destinations. Preserve the event database for dedupe during rollback.
+
+CI runs the regression suite on Windows and Linux plus ten synthetic Chromium forms. The user still needs to connect mailbox credentials, verify JobSync MCP access, and approve suitable destinations for a ten-form live pilot. No evidence from synthetic fixtures establishes live ATS conversion or real interview improvement. Calendar writes and recruiter follow-ups remain separately authorized tasks.

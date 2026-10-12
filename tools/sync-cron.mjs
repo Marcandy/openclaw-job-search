@@ -6,7 +6,7 @@ import { homedir } from 'node:os';
 import { loadRuntime, readJson, digest } from '../lib/runtime.mjs';
 const r = loadRuntime();
 const deployment = readJson(join(r.root, 'deployment.json'));
-const identity = { sourceRoot: r.sourceRoot, configPath: r.configPath, configDigest: r.configDigest, profile: r.profile };
+const identity = { sourceRoot: r.sourceRoot, configPath: r.configPath, configDigest: r.configDigest, profile: r.profile, sourceDigest: r.sourceDigest };
 if (digest(identity) !== digest(deployment.identity)) throw new Error('Deployment drift: run prepare-runtime first');
 const name = `job-search-${r.profile}-research`;
 const message = `Read ${deployment.researchPrompt} in full and execute public research only. Expected config digest ${r.configDigest}. Never transmit applicant data or submit applications.`;
