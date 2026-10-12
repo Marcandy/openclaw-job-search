@@ -32,6 +32,10 @@ if (!status || !KNOWN.has(status)) {
   console.error(`FATAL: --status must be one of ${[...KNOWN].join(', ')}`);
   process.exit(2);
 }
+if (status === 'submitted') {
+  console.error('REFUSED: submitted events require the manifest-bound submission worker and receipt. Export its events into the CSV ledger.');
+  process.exit(1);
+}
 for (const k of ['company', 'title', 'location', 'url', 'source']) {
   if (!get(k)) { console.error(`FATAL: --${k} is required`); process.exit(2); }
 }
