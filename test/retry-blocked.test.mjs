@@ -36,16 +36,11 @@ function runValidator(ledgerRows, candidate) {
   const candPath = join(dir, 'cand.json');
   writeFileSync(candPath, JSON.stringify({ candidates: [candidate] }));
 
-  // validate-pool reads its config relative to itself and imports ../lib, so the
-  // driven copy must live in the campaign root for those paths to resolve.
-  const script = readFileSync(join(root, 'validate-pool.mjs'), 'utf8')
-    .replace("join(here, 'campaign.config.json')", JSON.stringify(cfgPath));
-  const scriptPath = join(root, `.validate-pool.testcopy.${process.pid}.${Math.random().toString(36).slice(2)}.mjs`);
-  writeFileSync(scriptPath, script);
+  const scriptPath = join(root, 'validate-pool.mjs');
 
   try {
     const out = execFileSync(process.execPath, [scriptPath, candPath, '--json'], {
-      cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: root, env: { ...process.env, CAMPAIGN_CONFIG_PATH: cfgPath, CAMPAIGN_RUNTIME_ROOT: dir }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
     });
     return JSON.parse(out.slice(out.indexOf('{')));
   } catch (err) {
@@ -58,7 +53,7 @@ function runValidator(ledgerRows, candidate) {
     } }
     throw new Error('validator produced no JSON. stdout=' + out2.slice(0, 200) + ' stderr=' + String(err.stderr || '').slice(0, 200));
   } finally {
-    try { unlinkSync(scriptPath); } catch {}
+
   }
 }
 

@@ -1,6 +1,6 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 6,
+  "version": 7,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
   "description": "Nine-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
@@ -29,6 +29,11 @@
       "version": 6,
       "date": "2026-10-09",
       "change": "Added five markets by user instruction: San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD, each with daily quota 1, minBackups 2, primary headcount ceiling 5,000. None of the five has been measured with discovery/discover.py; quotas are starting assumptions. DC and Baltimore carry a heavy cleared-defense share that knownBlockerFilter is expected to reject; Houston carries an energy-domain share that roleRelevance and judgment must filter; Sacramento is government-dominated so sourceFilter does the heavy lifting. All other gates apply identically with no market-specific exception."
+    },
+    {
+      "version": 7,
+      "date": "2026-10-12",
+      "changes": "Canonical runtime paths, explicit profiles, generated deployment identity, manifest-bound recoverable submissions and outcome tracking."
     }
   ],
   "cities": [
@@ -91,7 +96,7 @@
         "New York, NY"
       ],
       "commuteAliasesAllowed": false,
-      "notes": "The corridor now covers Newark, East Newark, Jersey City, Harrison, and Hoboken — these are accepted outright. The commuteAliases above remain OFF: New York, NY in particular must never satisfy this quota, since a 15-mile sweep from Newark returns 158 Manhattan roles that would otherwise swamp the corridor. Record an unmet quota rather than widening further.",
+      "notes": "The corridor now covers Newark, East Newark, Jersey City, Harrison, and Hoboken \u2014 these are accepted outright. The commuteAliases above remain OFF: New York, NY in particular must never satisfy this quota, since a 15-mile sweep from Newark returns 158 Manhattan roles that would otherwise swamp the corridor. Record an unmet quota rather than widening further.",
       "companyProfileOverride": {
         "primaryHeadcountMax": 30000,
         "rationale": "User instruction 2026-08-17 raised this from 20,000 to 30,000, alongside widening the city to the Newark/Jersey City corridor. The original 2026-08-16 instruction was 'for Newark, headcount should be between 0 and 20000' after three research passes produced zero Newark candidates under the global 1000-person ceiling. This raises the ceiling for the Newark corridor ONLY. San Jose and Chicago remain capped at 1000.",
@@ -100,7 +105,7 @@
           "at least one verified thriving signal with a dated detail and source URL",
           "all title, experience, eligibility, salary, location, source, and blocker gates"
         ],
-        "note": "This raises the SIZE ceiling only. It does not admit household names. Prudential (~40k) and Maximus (~35k) still exceed even 30,000 and are on the deny list besides, so they remain backup-only with an explicit overrideReason. Note that the corridor's large employers — JPMorgan Chase, Bank of America, Goldman Sachs, AWS — are all on the household-name deny list and stay barred from primary regardless of this ceiling."
+        "note": "This raises the SIZE ceiling only. It does not admit household names. Prudential (~40k) and Maximus (~35k) still exceed even 30,000 and are on the deny list besides, so they remain backup-only with an explicit overrideReason. Note that the corridor's large employers \u2014 JPMorgan Chase, Bank of America, Goldman Sachs, AWS \u2014 are all on the household-name deny list and stay barred from primary regardless of this ceiling."
       }
     },
     {
@@ -120,7 +125,7 @@
       ],
       "excludedLocationPatterns": [
         "san jose, costa rica",
-        "san josé, costa rica",
+        "san jos\u00e9, costa rica",
         "san jose del",
         "san jose, philippines"
       ],
@@ -237,14 +242,31 @@
       "state": "CA",
       "dailyQuota": 1,
       "minBackups": 2,
-      "acceptedLocationAliases": ["San Diego, CA", "San Diego, California", "San Diego", "San Diego, CA hybrid", "San Diego, CA (Hybrid)", "US-CA-San Diego", "San Diego, CA, USA", "Greater San Diego"],
+      "acceptedLocationAliases": [
+        "San Diego, CA",
+        "San Diego, California",
+        "San Diego",
+        "San Diego, CA hybrid",
+        "San Diego, CA (Hybrid)",
+        "US-CA-San Diego",
+        "San Diego, CA, USA",
+        "Greater San Diego"
+      ],
       "excludedLocationPatterns": [],
-      "commuteAliases": ["La Jolla, CA", "Carlsbad, CA", "Chula Vista, CA"],
+      "commuteAliases": [
+        "La Jolla, CA",
+        "Carlsbad, CA",
+        "Chula Vista, CA"
+      ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
         "primaryHeadcountMax": 5000,
         "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
-        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
         "note": "Raises SIZE only. San Diego's large defense employers (Qualcomm, General Atomics, Northrop) are household names or clearance-bound and stay barred from primary regardless."
       },
       "notes": "Added 2026-10-09 by user instruction alongside Sacramento, Washington DC, Houston, and Baltimore. Supply unmeasured. Note: much of San Diego's tech market is defense/biotech - expect knownBlockerFilter (clearance, U.S. Person) to reject a large share."
@@ -255,14 +277,31 @@
       "state": "CA",
       "dailyQuota": 1,
       "minBackups": 2,
-      "acceptedLocationAliases": ["Sacramento, CA", "Sacramento, California", "Sacramento", "Sacramento, CA hybrid", "Sacramento, CA (Hybrid)", "US-CA-Sacramento", "Sacramento, CA, USA", "Greater Sacramento"],
+      "acceptedLocationAliases": [
+        "Sacramento, CA",
+        "Sacramento, California",
+        "Sacramento",
+        "Sacramento, CA hybrid",
+        "Sacramento, CA (Hybrid)",
+        "US-CA-Sacramento",
+        "Sacramento, CA, USA",
+        "Greater Sacramento"
+      ],
       "excludedLocationPatterns": [],
-      "commuteAliases": ["Roseville, CA", "Folsom, CA", "Davis, CA"],
+      "commuteAliases": [
+        "Roseville, CA",
+        "Folsom, CA",
+        "Davis, CA"
+      ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
         "primaryHeadcountMax": 5000,
         "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
-        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
         "note": "Raises SIZE only."
       },
       "notes": "Added 2026-10-09 by user instruction. Supply unmeasured; Sacramento is a government-dominated market, so the staffing-intermediary and state-agency share of postings will be high - sourceFilter must do heavy lifting."
@@ -273,15 +312,49 @@
       "state": "DC",
       "dailyQuota": 1,
       "minBackups": 2,
-      "acceptedLocationAliases": ["Washington, DC", "Washington DC", "Washington, D.C.", "Washington D.C.", "DC", "Washington, DC hybrid", "Washington, DC (Hybrid)", "US-DC-Washington", "Washington, DC, USA", "DMV"],
-      "excludedLocationPatterns": ["washington state", "washington, wa", "washington, pa", "washington, mo", "washington, il", "washington, in", "washington, nc", "washington, ga", "washington, mi", "washington, nj"],
+      "acceptedLocationAliases": [
+        "Washington, DC",
+        "Washington DC",
+        "Washington, D.C.",
+        "Washington D.C.",
+        "DC",
+        "Washington, DC hybrid",
+        "Washington, DC (Hybrid)",
+        "US-DC-Washington",
+        "Washington, DC, USA",
+        "DMV"
+      ],
+      "excludedLocationPatterns": [
+        "washington state",
+        "washington, wa",
+        "washington, pa",
+        "washington, mo",
+        "washington, il",
+        "washington, in",
+        "washington, nc",
+        "washington, ga",
+        "washington, mi",
+        "washington, nj"
+      ],
       "excludedLocationNote": "'Washington' alone collides with Washington State and a dozen small municipalities. The bare alias 'DC' is accepted because it is unambiguous in US job postings.",
-      "commuteAliases": ["Arlington, VA", "Alexandria, VA", "Bethesda, MD", "Silver Spring, MD", "Tysons, VA", "Reston, VA", "McLean, VA"],
+      "commuteAliases": [
+        "Arlington, VA",
+        "Alexandria, VA",
+        "Bethesda, MD",
+        "Silver Spring, MD",
+        "Tysons, VA",
+        "Reston, VA",
+        "McLean, VA"
+      ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
         "primaryHeadcountMax": 5000,
         "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
-        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
         "note": "Raises SIZE only. DC's dominant employers are federal contractors (Leidos, Booz Allen, CACI, SAIC, Peraton, MITRE) which are on the household-name deny list already, and most remaining cleared roles trip knownBlockerFilter on security-clearance requirements - expect a thin eligible pool."
       },
       "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. The DMV corridor aliases are OFF: Arlington/Tysons would swamp the DC quota with defense contractors."
@@ -292,15 +365,37 @@
       "state": "TX",
       "dailyQuota": 1,
       "minBackups": 2,
-      "acceptedLocationAliases": ["Houston, TX", "Houston, Texas", "Houston", "Houston, TX hybrid", "Houston, TX (Hybrid)", "US-TX-Houston", "Houston, TX, USA", "Greater Houston"],
-      "excludedLocationPatterns": ["houston, scotland", "houston, bc", "houston, british columbia"],
+      "acceptedLocationAliases": [
+        "Houston, TX",
+        "Houston, Texas",
+        "Houston",
+        "Houston, TX hybrid",
+        "Houston, TX (Hybrid)",
+        "US-TX-Houston",
+        "Houston, TX, USA",
+        "Greater Houston"
+      ],
+      "excludedLocationPatterns": [
+        "houston, scotland",
+        "houston, bc",
+        "houston, british columbia"
+      ],
       "excludedLocationNote": "Houston, British Columbia and Houston, Renfrewshire (Scotland) both appear in global job boards.",
-      "commuteAliases": ["Sugar Land, TX", "Katy, TX", "The Woodlands, TX", "Pasadena, TX"],
+      "commuteAliases": [
+        "Sugar Land, TX",
+        "Katy, TX",
+        "The Woodlands, TX",
+        "Pasadena, TX"
+      ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
         "primaryHeadcountMax": 5000,
         "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
-        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
         "note": "Raises SIZE only. Houston's energy majors (ExxonMobil, Chevron, ConocoPhillips, Shell, BP) are household names and stay barred from primary."
       },
       "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Energy-industry postings often hard-require domain background but not foreign languages, so skillMismatchFilter will not catch them - roleRelevance and judgment must."
@@ -311,15 +406,38 @@
       "state": "MD",
       "dailyQuota": 1,
       "minBackups": 2,
-      "acceptedLocationAliases": ["Baltimore, MD", "Baltimore, Maryland", "Baltimore", "Baltimore, MD hybrid", "Baltimore, MD (Hybrid)", "US-MD-Baltimore", "Baltimore, MD, USA", "Greater Baltimore"],
-      "excludedLocationPatterns": ["baltimore, ireland", "baltimore, oh", "baltimore, ohio", "baltimore, vt"],
+      "acceptedLocationAliases": [
+        "Baltimore, MD",
+        "Baltimore, Maryland",
+        "Baltimore",
+        "Baltimore, MD hybrid",
+        "Baltimore, MD (Hybrid)",
+        "US-MD-Baltimore",
+        "Baltimore, MD, USA",
+        "Greater Baltimore"
+      ],
+      "excludedLocationPatterns": [
+        "baltimore, ireland",
+        "baltimore, oh",
+        "baltimore, ohio",
+        "baltimore, vt"
+      ],
       "excludedLocationNote": "Baltimore, Ohio and Baltimore, Vermont are separate small municipalities; Baltimore, Ireland appears on global boards.",
-      "commuteAliases": ["Columbia, MD", "Towson, MD", "Ellicott City, MD", "Annapolis, MD"],
+      "commuteAliases": [
+        "Columbia, MD",
+        "Towson, MD",
+        "Ellicott City, MD",
+        "Annapolis, MD"
+      ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
         "primaryHeadcountMax": 5000,
         "rationale": "Sized identically to San Jose per the standing pattern for new markets; unmeasured until a discovery sweep runs.",
-        "stillEnforced": ["isHouseholdName must still be false for a primary slot", "at least one verified thriving signal with a dated detail and source URL", "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"],
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ],
         "note": "Raises SIZE only. Baltimore's anchors (Johns Hopkins, Under Armour, T. Rowe Price, Northrop Grumman) are household names and stay barred from primary."
       },
       "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Like DC, expect a large cleared-defense share that knownBlockerFilter will reject."
@@ -405,7 +523,7 @@
       "365 days before reapplying",
       "reapply after"
     ],
-    "note": "Matched case-insensitively against the notes column of ledger rows whose status is 'blocked'. A company with such a row is treated as blocked for ALL future roles, because the question sits on the employer's form rather than on one posting. Role-specific blockers such as a one-off essay prompt are not in this list and do not disqualify a company. To deliberately retry a blocked company, set retryKnownBlocker true on that candidate. Added 2026-09-11: Etched rejected every new Ashby application with a 365-day prior-interview lock after earlier Etched submissions — company-level, not role-level."
+    "note": "Matched case-insensitively against the notes column of ledger rows whose status is 'blocked'. A company with such a row is treated as blocked for ALL future roles, because the question sits on the employer's form rather than on one posting. Role-specific blockers such as a one-off essay prompt are not in this list and do not disqualify a company. To deliberately retry a blocked company, set retryKnownBlocker true on that candidate. Added 2026-09-11: Etched rejected every new Ashby application with a 365-day prior-interview lock after earlier Etched submissions \u2014 company-level, not role-level."
   },
   "eligibilityFilter": {
     "enabled": true,
@@ -886,7 +1004,11 @@
     "poolReportPattern": "openclaw-tri-city-role-pool-{date}.md",
     "openclawMediaInbound": "~/.openclaw\\media\\inbound",
     "jobsyncStarter": ".\\integrations\\jobsync\\start-jobsync.ps1",
-    "jobsyncDashboard": "http://127.0.0.1:3737"
+    "jobsyncDashboard": "http://127.0.0.1:3737",
+    "facts": "applicant-facts.json",
+    "database": "campaign.sqlite",
+    "boards": "boards.json",
+    "receipts": "receipts"
   },
   "resumeRouting": {
     "note": "Added 2026-10-08 from recruiter-event feedback: submit the resume variant that matches the role's primary stack instead of one generic resume for everything. Rules are evaluated in order; the first rule whose keywords appear in the posted title or description wins. Matching is case-insensitive on word boundaries. If no rule matches, fall back to paths.resume. The chosen variant and the matched rule must be recorded in the ledger notes for every submission, so resume-to-response conversion can be measured per variant later.",
@@ -894,19 +1016,40 @@
     "rules": [
       {
         "id": "java-spring",
-        "whenAnyKeyword": ["java", "spring boot", "springboot", "spring framework", "jvm", "kotlin"],
+        "whenAnyKeyword": [
+          "java",
+          "spring boot",
+          "springboot",
+          "spring framework",
+          "jvm",
+          "kotlin"
+        ],
         "resume": ".\\resumes\\Resume_Java_React.pdf",
         "rationale": "Java/Spring Boot-first variant: Java and Spring Boot foregrounded in the summary and experience sections."
       },
       {
         "id": "python",
-        "whenAnyKeyword": ["python", "django", "flask", "fastapi", "pandas"],
+        "whenAnyKeyword": [
+          "python",
+          "django",
+          "flask",
+          "fastapi",
+          "pandas"
+        ],
         "resume": ".\\resumes\\Resume_Python_React.pdf",
         "rationale": "Python-first variant: Python and Django foregrounded in the summary and experience sections. (A stricter backend-only variant exists at .\\resumes\\Resume_Python_Backend.pdf for roles with no front-end component.)"
       },
       {
         "id": "react-typescript",
-        "whenAnyKeyword": ["react", "typescript", "next.js", "frontend", "front end", "front-end", "redux"],
+        "whenAnyKeyword": [
+          "react",
+          "typescript",
+          "next.js",
+          "frontend",
+          "front end",
+          "front-end",
+          "redux"
+        ],
         "resume": ".\\resumes\\Resume_Python_React.pdf",
         "rationale": "Front-end-leaning roles use the Python/React variant, which leads with React/TypeScript front ends; both variants carry React, Redux, and TypeScript in every relevant role."
       }
@@ -1042,5 +1185,18 @@
     "note": "Rejects only when a non-stack language appears within a requirement phrase AND is not softened nearby. 'Java, Python, or Perl are a plus' must never trigger. This gate exists to stop spending quota slots on roles the applicant genuinely cannot do, not to narrow the search.",
     "foreignLanguagesNote": "The bare word \"go\" is deliberately absent: it matched ordinary prose (\"go-to-market\", \"going\") and falsely rejected AiPrise on 2026-08-24. Only \"golang\" is matched, which under-detects Go roles rather than over-rejecting good ones.",
     "foreignLanguagesAddendum2026_09_09": "dart/flutter added after NOCD \"Flutter Mobile Engineer\" passed on 2026-09-08. React Native is NOT Flutter; the two share no language or runtime. The remaining additions are ecosystems the applicant does not work in and which had no entry."
+  },
+  "runtime": {
+    "root": "~/.openclaw/job-search-runtime",
+    "defaultProfile": "fullstack",
+    "schedule": "30 12 * * *"
+  },
+  "profiles": {
+    "fullstack": {},
+    "apprenticeship": {
+      "experienceFilter": {
+        "maxAcceptedMinimumYears": 2
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Record the user's exact-destination authorization for today's validated pool.
  *
@@ -23,7 +23,7 @@ import { poolHash } from '../lib/role-filter.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const { config } = loadRuntime();
 
 // Testability seam: lets the smoke test exercise the real code path against a
 // throwaway state file instead of the live campaign state.

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Rank the missing personal facts by how many applications they have blocked.
  *
@@ -25,7 +25,7 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const { config } = loadRuntime();
 
 const args = process.argv.slice(2);
 const days = Number(args[args.indexOf('--days') + 1]) || null;

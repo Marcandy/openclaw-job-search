@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Campaign dashboard for the OpenClaw tri-city job search.
  *
@@ -34,7 +34,7 @@ import { buildBlockerIndex, normalizeCompany } from '../lib/role-filter.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(root, 'campaign.config.json')));
+const { config } = loadRuntime();
 
 const args = process.argv.slice(2);
 const PORT = Number(args[args.indexOf('--port') + 1]) || 4545;

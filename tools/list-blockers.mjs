@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * List every company the ledger shows as blocked by a company-level question.
  *
@@ -21,7 +21,7 @@ import { buildBlockerIndex } from '../lib/role-filter.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const { config } = loadRuntime();
 const wantJson = process.argv.includes('--json');
 
 /** Minimal RFC4180 parser; the ledger quotes commas and newlines inside notes. */

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from '../lib/runtime.mjs';
 /**
  * Ledger integrity check.
  *
@@ -39,7 +39,7 @@ import { canonicalizeUrl } from '../lib/role-filter.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
-const config = JSON.parse(readText(join(here, '..', 'campaign.config.json')));
+const { config } = loadRuntime();
 
 export const EXPECTED_HEADER = ['timestamp', 'company', 'title', 'location', 'url', 'source', 'status', 'resume_used', 'notes'];
 export const KNOWN_STATUSES = new Set(['submitted', 'blocked', 'drafted', 'reviewed', 'approved', 'rejected', 'withdrawn', 'closed', 'discovered']);

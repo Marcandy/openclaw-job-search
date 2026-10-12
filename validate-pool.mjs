@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { loadRuntime } from './lib/runtime.mjs';
 /**
  * Pool authorization gate.
  *
@@ -35,7 +35,7 @@ function readText(path) {
   return readFileSync(path, 'utf8').replace(/^﻿/, '');
 }
 
-const config = JSON.parse(readText(join(here, 'campaign.config.json')));
+const { config } = loadRuntime();
 
 // Relative entries in config.paths resolve against the config directory, so a
 // fresh clone works without editing absolute paths. Absolute paths are untouched.
