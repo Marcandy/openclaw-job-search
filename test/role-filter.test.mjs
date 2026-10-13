@@ -355,6 +355,30 @@ test('a hard requirement in any non-stack language is rejected', () => {
   assert.equal(checkSkillMatch({ description: 'Requires proficiency in Rust for systems work.' }, config).ok, false);
 });
 
+test('language names embedded in ordinary prose do not reject a role', () => {
+  for (const description of [
+    'Strong experience building AI evaluation systems in Python.',
+    'Required: scalable backend services in Java and TypeScript.',
+    'Experience with trusted production APIs and authentication.',
+  ]) {
+    assert.equal(checkSkillMatch({ description }, config).ok, true, description);
+  }
+});
+
+test('whole-token matching still rejects an actual language after ordinary prose', () => {
+  for (const description of [
+    'Experience building evaluation systems; proficiency in Lua is required.',
+    'Strong scalable services background; strong experience in Scala required.',
+    'Must have strong C++ experience.',
+    'Proficiency in C# required.',
+    'Strong experience with ASP.NET required.',
+    'Strong experience with .NET required.',
+    'Strong experience with VB.NET required.',
+  ]) {
+    assert.equal(checkSkillMatch({ description }, config).ok, false, description);
+  }
+});
+
 test('in-stack roles pass the skill gate untouched', () => {
   for (const description of [
     'Build full-stack apps with React, TypeScript, Python and AWS. 3+ years experience.',
