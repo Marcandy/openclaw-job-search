@@ -5,6 +5,12 @@ import { inspectApplicationForm, inspectPublicApplication } from '../lib/form-in
 const questionId = 'a1234567-1234-1234-1234-123456789abc';
 const prefix = 'b1234567-1234-1234-1234-123456789abc';
 
+test('required Ashby hidden Yes/No inputs are facts and cannot disappear from inventory',async()=>{
+ await withForm(`<div data-field-path="work_auth"><label class="required">Are you authorized to work?</label><div class="ashby-application-form-input-yesno"><button>Yes</button><button>No</button><input type="checkbox" name="work_auth" style="display:none"></div></div>`,async page=>{
+  const result=await inspectApplicationForm(page);assert.equal(result.questions.length,1);const q=result.questions[0];assert.equal(q.key,'work_auth');assert.equal(q.required,true);assert.equal(q.kind,'fact');assert.deepEqual(q.options,['Yes','No']);
+ });
+});
+
 async function withForm(html, callback, host = 'jobs.ashbyhq.com') {
   const browser = await chromium.launch({ headless:true });
   try {
