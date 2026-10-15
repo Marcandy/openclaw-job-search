@@ -7,6 +7,86 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
 
+for (const sendRequest of [false, true]) {
+  test(`post-click CAPTCHA ${sendRequest ? 'holds a possible cross-origin delivery' : 'releases a known non-delivery for replacement'}`, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+    const dir = mkdtempSync(join(tmpdir(), 'daily-captcha-'));
+    const bytes = Buffer.from('synthetic resume');
+    const destination = {
+      source: 'ashby',
+      title: 'Software Engineer',
+      url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001',
+      resumePath: 'Resume.pdf',
+      resumeHash: createHash('sha256').update(bytes).digest('hex'),
+    };
+    await context.route('**/*', (route) => {
+      if (route.request().method() === 'POST') return route.fulfill({ body: '{}' });
+      return route.fulfill({
+        contentType: 'text/html',
+        body: `
+        <h1>Software Engineer</h1><form>
+        <label for="name">Name</label><input id="name" required>
+        <label for="_systemfield_resume">Resume</label><input id="_systemfield_resume" type="file">
+        <span id="filename"></span><button type="submit">Submit Application</button></form>
+        <script>
+        document.querySelector('#_systemfield_resume').onchange = e => document.querySelector('#filename').textContent = e.target.files[0].name;
+        document.querySelector('form').onsubmit = e => {
+          e.preventDefault();
+          ${sendRequest ? "fetch('https://submission.example.org/apply', { method: 'POST', mode: 'no-cors', body: 'application' });" : ''}
+          document.body.insertAdjacentHTML('beforeend', '<p>Verify you are human</p>');
+        };
+        </script>`,
+      });
+    });
+    const driver = await liveAtsDriver({
+      context,
+      receiptDir: dir,
+      location: {},
+      confirmationTimeoutMs: 500,
+    });
+    try {
+      await driver.preflight(destination);
+      await driver.fill(destination, { name: 'Example Applicant' }, bytes);
+      await assert.rejects(driver.submit(destination), (error) => {
+        assert.match(error.message, /Visible challenge/);
+        assert.equal(Boolean(error.rejectedBeforeDelivery), !sendRequest);
+        assert.equal(error.evidence.writeRequestObserved, sendRequest);
+        return true;
+      });
+    } finally {
+      await driver.closePosting();
+      await browser.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('stalled posting is closed at its time limit so the worker can continue', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext();
+  const dir = mkdtempSync(join(tmpdir(), 'daily-timeout-'));
+  await context.route('**/*', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<h1>Unavailable form</h1>' }),
+  );
+  const driver = await liveAtsDriver({ context, receiptDir: dir, location: {}, maxPostingMs: 200 });
+  try {
+    await assert.rejects(
+      driver.preflight({
+        source: 'ashby',
+        title: 'Software Engineer',
+        url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001',
+      }),
+      /closed/,
+    );
+    assert.equal(context.pages().length, 0);
+  } finally {
+    await driver.closePosting();
+    await browser.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('additional required attachments block before any applicant upload', async () => {
   const browser = await chromium.launch({ headless: true }),
     context = await browser.newContext(),

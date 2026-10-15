@@ -17,6 +17,40 @@ const role = (n) => ({
   location: 'US remote',
   source: 'ashby',
 });
+
+test('verified pre-delivery failure releases capacity for a different successful application', () => {
+  const store = new EventStore(':memory:');
+  const clock = new Date();
+  try {
+    for (let i = 0; i < 9; i++) {
+      store.importLedger([{ ...role(i), timestamp: clock.toISOString(), status: 'submitted' }]);
+    }
+    const run = store.startRun();
+    const blocked = store.claim(run, role(9), 'blocked-manifest');
+    store.transition(blocked, run, 'filling');
+    beginDailySubmit(store, blocked, run, policy, clock);
+    store.transition(blocked, run, 'uncertain', { reason: 'CAPTCHA appeared' });
+    store.transition(blocked, run, 'blocked', {
+      reason: 'CAPTCHA prevented delivery',
+      reconciliationReason: 'No write observed; visible CAPTCHA; page closed',
+    });
+    assert.equal(dailyUsage(store, policy.timezone, clock).occupied, 9);
+    const replacement = store.claim(run, role(10), 'replacement-manifest');
+    store.transition(replacement, run, 'filling');
+    beginDailySubmit(store, replacement, run, policy, clock);
+    store.transition(replacement, run, 'submitted', {
+      receipt: { url: role(10).url, text: 'Application received', observedAt: clock.toISOString() },
+    });
+    assert.deepEqual(dailyUsage(store, policy.timezone, clock), {
+      day: dailyUsage(store, policy.timezone, clock).day,
+      confirmed: 10,
+      occupied: 10,
+      uncertain: 0,
+    });
+  } finally {
+    store.close();
+  }
+});
 test('daily cap includes manual/legacy submissions and uncertain delivery across fresh manifests', () => {
   const s = new EventStore(':memory:');
   try {

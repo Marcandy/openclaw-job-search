@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
-import { loadRuntime, readJson, atomicJson, digest, fileDigest } from '../lib/runtime.mjs';
+import { loadRuntime, readJson, atomicJson, digest } from '../lib/runtime.mjs';
 import { EventStore, applicationId } from '../lib/event-store.mjs';
 import {
   evaluateRole,
@@ -25,6 +25,7 @@ import {
 } from '../lib/daily-policy.mjs';
 import { discoverDaily, profileCurrent, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
+import { runReplacementQueue } from '../lib/replacement-queue.mjs';
 
 const args = process.argv.slice(2),
   option = (k) => {
@@ -170,7 +171,9 @@ async function researchProfiles(companies) {
 let runId, driver, timer;
 try {
   if (initial.occupied >= policy.dailyLimit && !args.includes('--preflight-only')) {
-    report.status = 'quota_already_met';
+    report.status =
+      initial.confirmed >= policy.dailyLimit ? 'quota_already_met' : 'shortfall_with_held_delivery';
+    report.stopReason = 'daily_capacity_reached';
     report.final = initial;
     checkpoint();
     console.log(
@@ -181,6 +184,7 @@ try {
         additionalApplications: 0,
       }),
     );
+    if (initial.confirmed < policy.dailyLimit) process.exitCode = 2;
   } else {
     // Only our dead processes may be recovered automatically. Unknown/manual
     // workers are left intact. Recovery holds every possible delivery uncertain.
@@ -259,7 +263,7 @@ try {
       structuredBlockers = existsSync(join(runtime.root, 'blockers.json'))
         ? readJson(join(runtime.root, 'blockers.json'))
         : [];
-    let researchDone = false;
+    let researchBatches = 0;
     async function candidates() {
       return discovered.candidates
         .filter((r) => policy.allowedCityIds.includes(r.cityId) && !store.get(applicationId(r.url)))
@@ -292,10 +296,13 @@ try {
         .sort((a, b) => (a.bucket === 'backup') - (b.bucket === 'backup') || b.score - a.score);
     }
     let pool = await candidates();
-    const need = args.includes('--preflight-only')
-      ? policy.dailyLimit
-      : Math.max(0, policy.dailyLimit - dailyUsage(store, policy.timezone).occupied);
-    if (pool.length < need * 2 && !args.includes('--no-research')) {
+    async function replenish() {
+      if (
+        args.includes('--no-research') ||
+        researchBatches >= 3 ||
+        Date.now() - started > 55 * 60000
+      )
+        return false;
       store.db.exec(
         'CREATE TABLE IF NOT EXISTS daily_research_attempts(company TEXT PRIMARY KEY,attempted_at TEXT NOT NULL)',
       );
@@ -311,6 +318,8 @@ try {
           discovered.candidates
             .filter(
               (r) =>
+                policy.allowedCityIds.includes(r.cityId) &&
+                !store.get(applicationId(r.url)) &&
                 !profiles.has(normalizeCompany(r.company)) &&
                 !recent.has(normalizeCompany(r.company)),
             )
@@ -323,6 +332,9 @@ try {
             'INSERT INTO daily_research_attempts VALUES(?,?) ON CONFLICT(company) DO UPDATE SET attempted_at=excluded.attempted_at',
           )
           .run(normalizeCompany(c.company), new Date().toISOString());
+      if (!companies.length) return false;
+      researchBatches++;
+      report.researchBatches = researchBatches;
       if (companies.length) {
         report.status = 'company_research';
         checkpoint();
@@ -338,13 +350,18 @@ try {
         } catch (e) {
           report.researchError = e.message;
         }
-        researchDone = true;
         pool = await candidates();
       }
+      report.status = args.includes('--preflight-only') ? 'preflight' : 'applying';
+      report.researchUsed = researchBatches > 0;
+      report.candidateCount = pool.length;
+      checkpoint();
+      return true;
     }
+    if (!pool.length) await replenish();
     report.status = args.includes('--preflight-only') ? 'preflight' : 'applying';
     report.candidateCount = pool.length;
-    report.researchUsed = researchDone;
+    report.researchUsed = researchBatches > 0;
     checkpoint();
     driver = await liveAtsDriver({
       profilePath: join(runtime.root, 'daily-browser'),
@@ -353,137 +370,144 @@ try {
       headless: runtime.config.autonomous?.headless ?? false,
     });
     const maxPreflight = Number(option('--max-preflight') ?? 50);
-    let inspected = 0;
-    for (const role of pool) {
-      if (Date.now() - started > 70 * 60000) break;
-      if (
-        args.includes('--preflight-only')
-          ? inspected >= maxPreflight
-          : dailyUsage(store, policy.timezone).occupied >= policy.dailyLimit
-      )
-        break;
-      let id,
-        startedSubmit = false;
-      try {
-        reverify();
-        if (!policy.resumes[role.resumePath]) throw Error('Resume not covered by standing policy');
-        const live = await driver.preflight(role);
-        inspected++;
-        if (
-          !samePosting(live.url, role) ||
-          live.title.trim().toLowerCase() !== role.title.trim().toLowerCase() ||
-          live.blockedReason
-        )
-          throw Error(live.blockedReason ?? 'Official posting changed');
-        const plan = mapRoutineQuestions(live.questions, role, facts, policy);
-        if (plan.blocked.length)
-          throw Error('Required fields blocked: ' + JSON.stringify(plan.blocked));
-        if (args.includes('--preflight-only')) {
+    const queue = await runReplacementQueue({
+      candidates,
+      replenish,
+      shouldStop: (attempted) => {
+        if (Date.now() - started > 70 * 60000) return 'run_time_limit';
+        if (args.includes('--preflight-only'))
+          return attempted >= maxPreflight ? 'preflight_limit' : false;
+        return dailyUsage(store, policy.timezone).occupied >= policy.dailyLimit
+          ? 'daily_capacity_reached'
+          : false;
+      },
+      attempt: async (role) => {
+        let id,
+          startedSubmit = false;
+        try {
+          reverify();
+          if (!policy.resumes[role.resumePath])
+            throw Error('Resume not covered by standing policy');
+          const live = await driver.preflight(role);
+          if (
+            !samePosting(live.url, role) ||
+            live.title.trim().toLowerCase() !== role.title.trim().toLowerCase() ||
+            live.blockedReason
+          )
+            throw Error(live.blockedReason ?? 'Official posting changed');
+          const plan = mapRoutineQuestions(live.questions, role, facts, policy);
+          if (plan.blocked.length)
+            throw Error('Required fields blocked: ' + JSON.stringify(plan.blocked));
+          if (args.includes('--preflight-only')) {
+            report.results.push({
+              company: role.company,
+              title: role.title,
+              url: role.url,
+              status: 'preflight_passed',
+              questions: live.questions.length,
+              required: live.questions.filter((q) => q.required).length,
+            });
+            checkpoint();
+            return;
+          }
+          const factsPath = join(dayDir, applicationId(role.url) + '-facts.json');
+          atomicJson(factsPath, plan.facts);
+          const subRuntime = { ...runtime, config: structuredClone(runtime.config) };
+          subRuntime.config.paths.facts = factsPath;
+          subRuntime.configDigest = digest(subRuntime.config);
+          const state = {
+            status: 'awaiting_authorization',
+            campaignDate: initial.day,
+            pool: { daily: { primary: [{ ...role, answers: plan.answers }], backup: [] } },
+            dailyQuota: { daily: 1 },
+          };
+          state.submissionManifest = buildManifest(state, subRuntime, { maxSubmissions: 1 });
+          state.status = 'authorized';
+          state.authorization = {
+            manifestHash: manifestHash(state.submissionManifest),
+            authorizedAt: new Date().toISOString(),
+            authorizedBy: 'standing-policy:' + policy.hash,
+          };
+          const d = state.submissionManifest.destinations[0],
+            auditPath = join(dayDir, applicationId(role.url) + '-manifest.json');
+          atomicJson(auditPath, {
+            standingPolicyHash: policy.hash,
+            state,
+            questions: live.questions,
+          });
+          reverify();
+          verifyManifestAuthorization(state, subRuntime);
+          id = store.claim(
+            runId,
+            { ...d, profile: runtime.profile },
+            state.authorization.manifestHash,
+          );
+          store.transition(id, runId, 'filling');
+          await driver.fill(
+            d,
+            answerQuestions(live.questions, d, plan.facts).answers,
+            readFileSync(d.resumePath),
+          );
+          const final = await driver.inspect(d),
+            finalPlan = answerQuestions(final.questions, d, plan.facts);
+          if (
+            final.blockedReason ||
+            !samePosting(final.url, d) ||
+            final.title.trim().toLowerCase() !== d.title.trim().toLowerCase() ||
+            finalPlan.blocked.length ||
+            digest(finalPlan.answers) !==
+              digest(answerQuestions(live.questions, d, plan.facts).answers) ||
+            digest(final.questions) !== digest(live.questions)
+          )
+            throw Error('Live form changed after filling');
+          reverify();
+          verifyManifestAuthorization(state, subRuntime);
+          beginDailySubmit(store, id, runId, policy);
+          startedSubmit = true;
+          const receipt = await driver.submit(d);
+          store.transition(id, runId, 'submitted', {
+            receipt,
+            standingPolicyHash: policy.hash,
+            manifestHash: state.authorization.manifestHash,
+          });
           report.results.push({
             company: role.company,
             title: role.title,
             url: role.url,
-            status: 'preflight_passed',
-            questions: live.questions.length,
-            required: live.questions.filter((q) => q.required).length,
+            status: 'submitted',
+            receiptPath: receipt.screenshotPath,
           });
-          checkpoint();
-          continue;
-        }
-        const factsPath = join(dayDir, applicationId(role.url) + '-facts.json');
-        atomicJson(factsPath, plan.facts);
-        const subRuntime = { ...runtime, config: structuredClone(runtime.config) };
-        subRuntime.config.paths.facts = factsPath;
-        subRuntime.configDigest = digest(subRuntime.config);
-        const state = {
-          status: 'awaiting_authorization',
-          campaignDate: initial.day,
-          pool: { daily: { primary: [{ ...role, answers: plan.answers }], backup: [] } },
-          dailyQuota: { daily: 1 },
-        };
-        state.submissionManifest = buildManifest(state, subRuntime, { maxSubmissions: 1 });
-        state.status = 'authorized';
-        state.authorization = {
-          manifestHash: manifestHash(state.submissionManifest),
-          authorizedAt: new Date().toISOString(),
-          authorizedBy: 'standing-policy:' + policy.hash,
-        };
-        const d = state.submissionManifest.destinations[0],
-          auditPath = join(dayDir, applicationId(role.url) + '-manifest.json');
-        atomicJson(auditPath, {
-          standingPolicyHash: policy.hash,
-          state,
-          questions: live.questions,
-        });
-        reverify();
-        verifyManifestAuthorization(state, subRuntime);
-        id = store.claim(
-          runId,
-          { ...d, profile: runtime.profile },
-          state.authorization.manifestHash,
-        );
-        store.transition(id, runId, 'filling');
-        await driver.fill(
-          d,
-          answerQuestions(live.questions, d, plan.facts).answers,
-          readFileSync(d.resumePath),
-        );
-        const final = await driver.inspect(d),
-          finalPlan = answerQuestions(final.questions, d, plan.facts);
-        if (
-          final.blockedReason ||
-          !samePosting(final.url, d) ||
-          final.title.trim().toLowerCase() !== d.title.trim().toLowerCase() ||
-          finalPlan.blocked.length ||
-          digest(finalPlan.answers) !==
-            digest(answerQuestions(live.questions, d, plan.facts).answers) ||
-          digest(final.questions) !== digest(live.questions)
-        )
-          throw Error('Live form changed after filling');
-        reverify();
-        verifyManifestAuthorization(state, subRuntime);
-        beginDailySubmit(store, id, runId, policy);
-        startedSubmit = true;
-        const receipt = await driver.submit(d);
-        store.transition(id, runId, 'submitted', {
-          receipt,
-          standingPolicyHash: policy.hash,
-          manifestHash: state.authorization.manifestHash,
-        });
-        report.results.push({
-          company: role.company,
-          title: role.title,
-          url: role.url,
-          status: 'submitted',
-          receiptPath: receipt.screenshotPath,
-        });
-      } catch (e) {
-        if (id) {
-          store.transition(id, runId, startedSubmit ? 'uncertain' : 'blocked', {
+        } catch (e) {
+          if (id) {
+            store.transition(id, runId, startedSubmit ? 'uncertain' : 'blocked', {
+              reason: e.message,
+              evidence: e.evidence,
+            });
+            if (startedSubmit && e.rejectedBeforeDelivery)
+              store.transition(id, runId, 'blocked', {
+                reason: 'Verified pre-delivery block; release slot and select another role',
+                reconciliationReason: e.message,
+                evidence: e.evidence,
+              });
+          }
+          report.results.push({
+            company: role.company,
+            title: role.title,
+            url: role.url,
+            status: id ? store.get(id).state : 'skipped',
             reason: e.message,
             evidence: e.evidence,
           });
-          if (startedSubmit && e.rejectedBeforeDelivery)
-            store.transition(id, runId, 'blocked', {
-              reason: 'Explicit client validation rejected submission before any application POST',
-              reconciliationReason: e.message,
-              evidence: e.evidence,
-            });
+        } finally {
+          await driver.closePosting();
+          report.final = dailyUsage(store, policy.timezone);
+          checkpoint();
         }
-        report.results.push({
-          company: role.company,
-          title: role.title,
-          url: role.url,
-          status: id ? store.get(id).state : 'skipped',
-          reason: e.message,
-          evidence: e.evidence,
-        });
-      } finally {
-        await driver.closePosting();
-        report.final = dailyUsage(store, policy.timezone);
-        checkpoint();
-      }
-    }
+      },
+    });
+    report.stopReason = queue.stopReason;
+    report.attempted = queue.attempted;
+    report.researchBatches = researchBatches;
     report.final = dailyUsage(store, policy.timezone);
     report.status = args.includes('--preflight-only')
       ? 'preflight_complete'
