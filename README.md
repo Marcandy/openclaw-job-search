@@ -67,6 +67,12 @@ and ceilings for your own search:
 | Washington, DC | 1 | 2 | 5,000 |
 | Houston, TX | 1 | 2 | 5,000 |
 | Baltimore, MD | 1 | 2 | 5,000 |
+| St. Louis, MO | 1 | 2 | 5,000 |
+
+St. Louis was added in version 8 (2026-10-15), bringing the daily total to 18.
+It accepts St. Louis/St Louis/Saint Louis with an explicit Missouri location.
+The starting quota follows the newer markets; supply remains unmeasured.
+East St. Louis, Illinois, and nearby municipalities do not satisfy this quota.
 
 The Newark market is a **corridor**: Newark, East Newark, Jersey City, Harrison, and
 Hoboken. New York City never counts — a 15-mile sweep from Newark returns 158
