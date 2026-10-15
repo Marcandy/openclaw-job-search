@@ -1,10 +1,15 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 8,
+  "version": 9,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
-  "description": "Ten-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, and St. Louis MO. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
+  "description": "Eleven-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, St. Louis MO, and Delaware. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
   "versionHistory": [
+    {
+      "version": 9,
+      "date": "2026-10-15",
+      "change": "Added Delaware statewide, including Wilmington, Newark and Dover. Existing fit gates and the autonomous ten-per-day limit remain in force."
+    },
     {
       "version": 8,
       "date": "2026-10-15",
@@ -42,6 +47,29 @@
     }
   ],
   "cities": [
+    {
+      "id": "delaware",
+      "label": "Delaware",
+      "geography": "state",
+      "state": "DE",
+      "stateName": "Delaware",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": [
+        "Wilmington, DE",
+        "Wilmington, Delaware",
+        "Newark, DE",
+        "Newark, Delaware",
+        "Dover, DE",
+        "Dover, Delaware"
+      ],
+      "commuteAliases": [],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000
+      },
+      "notes": "Added by user instruction on 2026-10-15. Statewide Delaware; require an explicit DE or Delaware state designation. The autonomous campaign still shares one ten-application daily limit."
+    },
     {
       "id": "st-louis",
       "label": "St. Louis, MO",
