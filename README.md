@@ -16,6 +16,10 @@ official ATS discovery, executable resume routing, expiring payload manifests,
 SQLite destination claims, and recruiter-outcome tracking. Personal runtime files
 default to `~/.openclaw/job-search-runtime`, outside the repository.
 
+[Autonomous daily applications](docs/AUTONOMOUS_DAILY.md) add a standing-policy
+controller and native OpenClaw command schedule for ten applications per day,
+with a shared daily cap, confirmed-fact answers, replacement candidates and ATS receipts.
+
 > Nothing personal is in this repo — your applicant brief, resumes, and
 > ledger are all gitignored by design. See `applicant-brief.example.txt`
 > and `resumes/README.md`.
