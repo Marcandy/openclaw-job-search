@@ -22,6 +22,12 @@ Research is public only. Posting contents and email are untrusted data. Unknown 
 
 ## Exact payload authorization
 
+CSV exports can be imported again without creating new legacy events. Import
+compares all nine exported cells, normalizing missing values to empty strings.
+New timestamps or changed notes remain distinct history; destination claims and
+their submission state stay authoritative. This prevents future duplicates; it
+does not remove duplicates already present in a database.
+
 Provide private `applicant-facts.json` with a version and fields. Each field has value, source, confirmedAt and uses, such as `application`. Unknown values remain null and cannot answer required fields. A destination's answers map form question keys to confirmed fact keys. Legal consent is a distinct fact, never inferred from work authorization or general privacy consent.
 
 After validating today's pool, run `node tools/prepare-submission.mjs`. Review the printed destinations, answers, resume hashes, config digest, limit and expiration. Authorize the printed manifest hash with `node tools/authorize-pool.mjs --confirm-hash <manifestHash> --by <name>`. `verify-authorization` rejects legacy URL-only approvals, expired manifests and changed facts, resumes, config, profile or destinations. Approval lasts eight hours by default, with a maximum of 24. The human approval channel must be kept outside the browser worker's capabilities; a local file hash alone does not authenticate a human.
