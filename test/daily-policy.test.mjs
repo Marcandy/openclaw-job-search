@@ -46,6 +46,7 @@ test('US work authorization is never reused for Canada, including sponsorship qu
  const f={version:'test',fields:{authorizedToWorkText:field('Yes'),needsSponsorshipText:field('No')}};
  const qs=[{key:'ca',label:'Are you authorized to work in Canada?',required:true,type:'checkbox',kind:'fact',options:['Yes','No']},{key:'visa',label:'Will you require visa sponsorship in Canada?',required:true,type:'checkbox',kind:'fact',options:['Yes','No']}];
  const mapped=mapRoutineQuestions(qs,role(1),f,policy,now);assert.deepEqual(mapped.answers,{});assert.equal(mapped.blocked.length,2);
+ const either=mapRoutineQuestions([{...qs[0],label:'Are you legally authorized to work in the United States or Canada?'}],role(1),f,policy,now);assert.equal(either.facts.fields[either.answers.ca].value,'Yes');
 });
 test('salary uses annual USD components; descriptive dollar ranges are not invented',()=>{
  assert.deepEqual(postedSalary({compensation:{summaryComponents:[{compensationType:'Salary',currencyCode:'USD',interval:'1 YEAR',minValue:120000,maxValue:160000}]}}),{salaryMin:120000,salaryMax:160000});
