@@ -17,8 +17,8 @@ test('St. Louis accepts Missouri spellings and rejects nearby or ambiguous locat
   }
 });
 
-test('St. Louis applies existing title and clearance gates', () => {
-  const result = evaluateRole({ company: 'Synthetic', title: 'Senior AI Engineer', location: city.label, description: 'An active security clearance is required.' }, city, config);
+test('St. Louis applies the existing title gate', () => {
+  const result = evaluateRole({ company: 'Synthetic', title: 'Senior AI Engineer', location: city.label, description: 'Build AI applications.' }, city, config);
   assert.equal(result.verdict, 'rejected');
   assert.ok(result.failures.some(f => f.check === 'title'));
 });
