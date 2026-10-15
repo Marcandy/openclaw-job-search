@@ -1,10 +1,15 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 7,
+  "version": 8,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
-  "description": "Nine-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, and Baltimore MD. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
+  "description": "Ten-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, and St. Louis MO. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
   "versionHistory": [
+    {
+      "version": 8,
+      "date": "2026-10-15",
+      "change": "Added St. Louis, Missouri by user instruction. Starting daily quota 1, minBackups 2 and primary headcount ceiling 5,000 follow the newer-market defaults; supply is unmeasured. Accept explicit Missouri locations, with no commute widening."
+    },
     {
       "version": 2,
       "date": "2026-08-16",
@@ -37,6 +42,36 @@
     }
   ],
   "cities": [
+    {
+      "id": "st-louis",
+      "label": "St. Louis, MO",
+      "state": "MO",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": [
+        "St. Louis, MO", "St Louis, MO", "Saint Louis, MO",
+        "St. Louis, Missouri", "St Louis, Missouri", "Saint Louis, Missouri",
+        "US-MO-St. Louis", "US-MO-St Louis", "US-MO-Saint Louis",
+        "MO - St. Louis", "MO - St Louis", "MO - Saint Louis"
+      ],
+      "excludedLocationPatterns": [
+        "east st. louis", "east st louis", "east saint louis",
+        "bay st. louis", "bay st louis", "bay saint louis",
+        "st. louis county", "st louis county", "saint louis county"
+      ],
+      "commuteAliases": ["Clayton, MO", "Chesterfield, MO", "St. Charles, MO", "East St. Louis, IL"],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Starting assumption follows the newer markets; supply must be measured before adjusting the quota or geography.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ]
+      },
+      "notes": "Added 2026-10-15. City proper in Missouri only; bare city names and metro/county locations require clarification rather than silently accepting Illinois or nearby municipalities. No discovery sweep has measured this market yet."
+    },
     {
       "id": "newark",
       "label": "Newark / Jersey City, NJ",

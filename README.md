@@ -39,6 +39,12 @@ default to `~/.openclaw/job-search-runtime`, outside the repository.
 - **Regression and browser tests** covering gates, payload approval, crash recovery and synthetic forms
 - **Agent skill included** — `skills/browser-automation/` for reliable
   multi-step browser work in OpenClaw
+- **Public form inventory** — `tools/inspect-form.mjs` finds required questions
+  and grouped choices before approval, without entering applicant data
+
+See [the GitHub skills review](docs/AI_SKILLS_REVIEW_2026-10-15.md) for the
+maintainers, projects, adoption choices and adversarial review behind the latest
+workflow improvements.
 
 ## Why this exists
 
@@ -67,6 +73,12 @@ and ceilings for your own search:
 | Washington, DC | 1 | 2 | 5,000 |
 | Houston, TX | 1 | 2 | 5,000 |
 | Baltimore, MD | 1 | 2 | 5,000 |
+| St. Louis, MO | 1 | 2 | 5,000 |
+
+St. Louis was added in version 8 (2026-10-15), bringing the daily total to 18.
+It accepts St. Louis/St Louis/Saint Louis with an explicit Missouri location.
+The starting quota follows the newer markets; supply remains unmeasured.
+East St. Louis, Illinois, and nearby municipalities do not satisfy this quota.
 
 The Newark market is a **corridor**: Newark, East Newark, Jersey City, Harrison, and
 Hoboken. New York City never counts — a 15-mile sweep from Newark returns 158
