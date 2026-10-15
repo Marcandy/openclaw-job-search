@@ -89,7 +89,7 @@ try{
       return{...role,...routeResume(role,runtime.config),bucket:evaluated.verdict,score:evaluated.score};
     }).filter(Boolean).sort((a,b)=>(a.bucket==='backup')-(b.bucket==='backup')||b.score-a.score);}
     let pool=await candidates();
-    const need=policy.dailyLimit-dailyUsage(store,policy.timezone).occupied;
+    const need=args.includes('--preflight-only')?policy.dailyLimit:Math.max(0,policy.dailyLimit-dailyUsage(store,policy.timezone).occupied);
     if(pool.length<need*2&&!args.includes('--no-research')){
       const companies=[...new Map(discovered.candidates.filter(r=>!profiles.has(normalizeCompany(r.company))).map(r=>[normalizeCompany(r.company),{company:r.company,url:r.url}])).values()].slice(0,20);
       if(companies.length){report.status='company_research';checkpoint();try{for(const p of await researchProfiles(companies)){profiles.set(normalizeCompany(p.company),p);store.db.prepare('INSERT INTO daily_company_profiles VALUES(?,?) ON CONFLICT(company) DO UPDATE SET data_json=excluded.data_json').run(normalizeCompany(p.company),JSON.stringify(p));}}catch(e){report.researchError=e.message;}researchDone=true;pool=await candidates();}

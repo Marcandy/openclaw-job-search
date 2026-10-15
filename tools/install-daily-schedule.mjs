@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { realpathSync } from 'node:fs';
 import { loadRuntime,atomicJson,readJson,digest } from '../lib/runtime.mjs';
 const args=process.argv.slice(2),at=k=>{const i=args.indexOf(k);return i<0?null:args[i+1];};
 const runtime=loadRuntime(),cli=at('--cli');if(!cli)throw Error('Supply the installed OpenClaw CLI entrypoint with --cli');
 const name='job-search-daily-ten',schedule='30 12,16 * * *';
 const policyPath=join(runtime.root,'autonomous-policy.json');
-const argv=[process.execPath,join(runtime.sourceRoot,'tools','daily-run.mjs'),'--config',runtime.configPath,'--runtime',runtime.root,'--policy',policyPath,'--policy-hash',digest(readJson(policyPath))];
+const argv=[realpathSync(process.execPath),join(runtime.sourceRoot,'tools','daily-run.mjs'),'--config',runtime.configPath,'--runtime',runtime.root,'--policy',policyPath,'--policy-hash',digest(readJson(policyPath))];
 const call=a=>JSON.parse(execFileSync(process.execPath,[cli,...a],{encoding:'utf8',timeout:120000,maxBuffer:8*1024*1024}));
 const before=call(['cron','list','--all','--json']);
 const matches=before.jobs.filter(j=>j.name===name||j.name==='newark-sanjose-chicago-3-2-2'||j.name==='job-search-fullstack-research');
