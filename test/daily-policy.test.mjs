@@ -41,10 +41,17 @@ test('US remote requires actual remote metadata and US eligibility; Hybrid prima
  assert.equal(usRemote({locations:['Remote, United States'],description:'We cannot hire from New York',remoteMetadata:{workplaceType:'Remote'}}),false);
  assert.equal(usRemote({locations:['San Francisco'],remoteMetadata:{workplaceType:'Hybrid',secondaryLocations:[{location:'Remote',address:{postalAddress:{addressCountry:'United States'}}}]}}),true);
 });
+test('US work authorization is never reused for Canada, including sponsorship questions',()=>{
+ const field=value=>({value,source:'confirmed',confirmedAt:now.toISOString(),uses:['application']});
+ const f={version:'test',fields:{authorizedToWorkText:field('Yes'),needsSponsorshipText:field('No')}};
+ const qs=[{key:'ca',label:'Are you authorized to work in Canada?',required:true,type:'checkbox',kind:'fact',options:['Yes','No']},{key:'visa',label:'Will you require visa sponsorship in Canada?',required:true,type:'checkbox',kind:'fact',options:['Yes','No']}];
+ const mapped=mapRoutineQuestions(qs,role(1),f,policy,now);assert.deepEqual(mapped.answers,{});assert.equal(mapped.blocked.length,2);
+});
 test('salary uses annual USD components; descriptive dollar ranges are not invented',()=>{
  assert.deepEqual(postedSalary({compensation:{summaryComponents:[{compensationType:'Salary',currencyCode:'USD',interval:'1 YEAR',minValue:120000,maxValue:160000}]}}),{salaryMin:120000,salaryMax:160000});
  assert.deepEqual(postedSalary({description:'Equipment stipend $1,000 - $2,000'}),{salaryMin:null,salaryMax:null});
  assert.deepEqual(postedSalary({description:'Annual US salary $110K – $180K'}),{salaryMin:110000,salaryMax:180000});
+ assert.deepEqual(postedSalary({description:'Canadian salary $110K – $180K CAD'}),{salaryMin:null,salaryMax:null});
 });
 test('company research must corroborate both headcount bounds and a dated signal',async()=>{
  const profile={headcountMin:51,headcountMax:200,headcountSourceUrl:'https://example.org/about',headcountExcerpt:'Our company has 51 to 200 employees.',isHouseholdName:false,thrivingSignals:[{type:'recent_funding_round',asOf:'2026-09-01',sourceUrl:'https://example.org/news',excerpt:'We raised a Series B to expand our product.'}]};

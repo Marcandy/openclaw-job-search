@@ -21,8 +21,8 @@ if(option('--policy-hash')&&option('--policy-hash')!==policy.hash){store.close()
 const initial=dailyUsage(store,policy.timezone),dayDir=join(runtime.root,'daily',initial.day);
 mkdirSync(dayDir,{recursive:true});
 const report={day:initial.day,target:policy.dailyLimit,startedAt:new Date().toISOString(),status:'starting',initial,results:[],discovery:null};
-const reportPath=join(dayDir,'report.json'),latestPath=join(runtime.root,'daily-latest.json');
-function checkpoint(){report.updatedAt=new Date().toISOString();atomicJson(reportPath,report);atomicJson(latestPath,report);}
+const reportPath=join(dayDir,'run-'+Date.now()+'-report.json'),latestPath=join(runtime.root,'daily-latest.json');
+function checkpoint(){report.updatedAt=new Date().toISOString();atomicJson(reportPath,report);atomicJson(join(dayDir,'report.json'),report);atomicJson(latestPath,report);}
 function exportLedger(){
   const head=['timestamp','company','title','location','url','source','status','resume_used','notes'],quote=v=>'"'+String(v??'').replaceAll('"','""')+'"';
   const csv=head.join(',')+'\n'+store.ledgerRows().map(r=>head.map(k=>quote(r[k])).join(',')).join('\n')+'\n';
@@ -70,7 +70,7 @@ try{
     }
     runId=store.startRun();store.db.prepare('INSERT INTO daily_workers VALUES(?,?,?)').run(runId,process.pid,new Date().toISOString());
     report.runId=runId;report.standingPolicyHash=policy.hash;report.status='discovering';checkpoint();
-    timer=setInterval(()=>{try{store.heartbeat(runId);}catch{}},30000);timer.unref();
+    let ticks=0;timer=setInterval(()=>{try{store.heartbeat(runId);if(++ticks%4===0)console.log(JSON.stringify({phase:report.status,day:report.day,processed:report.results.length}));}catch{}},30000);timer.unref();
     const started=Date.now(),registry=readJson(runtime.config.paths.boards);
     const discovered=await discoverDaily(store,runtime.config,registry,{onProgress:p=>{report.discovery=p;checkpoint();}});
     report.discovery={...report.discovery,eligibleBeforeCompanyEvidence:discovered.candidates.length,boardErrors:discovered.errors};checkpoint();
@@ -91,7 +91,10 @@ try{
     let pool=await candidates();
     const need=args.includes('--preflight-only')?policy.dailyLimit:Math.max(0,policy.dailyLimit-dailyUsage(store,policy.timezone).occupied);
     if(pool.length<need*2&&!args.includes('--no-research')){
-      const companies=[...new Map(discovered.candidates.filter(r=>!profiles.has(normalizeCompany(r.company))).map(r=>[normalizeCompany(r.company),{company:r.company,url:r.url}])).values()].slice(0,20);
+      store.db.exec('CREATE TABLE IF NOT EXISTS daily_research_attempts(company TEXT PRIMARY KEY,attempted_at TEXT NOT NULL)');
+      const recent=new Set(store.db.prepare('SELECT * FROM daily_research_attempts').all().filter(r=>Date.now()-Date.parse(r.attempted_at)<7*86400000).map(r=>r.company));
+      const companies=[...new Map(discovered.candidates.filter(r=>!profiles.has(normalizeCompany(r.company))&&!recent.has(normalizeCompany(r.company))).map(r=>[normalizeCompany(r.company),{company:r.company,url:r.url}])).values()].slice(0,20);
+      for(const c of companies)store.db.prepare('INSERT INTO daily_research_attempts VALUES(?,?) ON CONFLICT(company) DO UPDATE SET attempted_at=excluded.attempted_at').run(normalizeCompany(c.company),new Date().toISOString());
       if(companies.length){report.status='company_research';checkpoint();try{for(const p of await researchProfiles(companies)){profiles.set(normalizeCompany(p.company),p);store.db.prepare('INSERT INTO daily_company_profiles VALUES(?,?) ON CONFLICT(company) DO UPDATE SET data_json=excluded.data_json').run(normalizeCompany(p.company),JSON.stringify(p));}}catch(e){report.researchError=e.message;}researchDone=true;pool=await candidates();}
     }
     report.status=args.includes('--preflight-only')?'preflight':'applying';report.candidateCount=pool.length;report.researchUsed=researchDone;checkpoint();

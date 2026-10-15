@@ -7,6 +7,14 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
 
+test('additional required attachments block before any applicant upload',async()=>{
+ const browser=await chromium.launch({headless:true}),context=await browser.newContext(),dir=mkdtempSync(join(tmpdir(),'daily-extra-doc-'));
+ await context.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<h1>Software Engineer</h1><label for="email">Email</label><input id="email" required><label for="resume">Resume</label><input id="resume" type="file" required><label for="cover">Cover letter</label><input id="cover" type="file" required>'}));
+ const driver=await liveAtsDriver({context,receiptDir:dir,location:{}});
+ try{await assert.rejects(driver.preflight({source:'ashby',title:'Software Engineer',url:'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001'}),/Additional required/);}
+ finally{await driver.closePosting();await browser.close();rmSync(dir,{recursive:true,force:true});}
+});
+
 test('live adapter retains hidden Yes/No values, declines optional cookies and recognizes custom ATS Success',async()=>{
  const browser=await chromium.launch({headless:true}),context=await browser.newContext(),dir=mkdtempSync(join(tmpdir(),'daily-ats-'));
  const id='00000000-0000-0000-0000-000000000001',bytes=Buffer.from('synthetic PDF bytes');
