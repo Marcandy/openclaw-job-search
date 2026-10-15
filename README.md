@@ -17,7 +17,7 @@ SQLite destination claims, and recruiter-outcome tracking. Personal runtime file
 default to `~/.openclaw/job-search-runtime`, outside the repository.
 
 [Autonomous daily applications](docs/AUTONOMOUS_DAILY.md) add a standing-policy
-controller and native OpenClaw command schedule for ten applications per day,
+controller and native OpenClaw command schedule for twelve applications per day,
 with a shared daily cap, confirmed-fact answers, replacement candidates and ATS receipts.
 
 > Nothing personal is in this repo — your applicant brief, resumes, and
@@ -78,11 +78,17 @@ and ceilings for your own search:
 | Houston, TX | 1 | 2 | 5,000 |
 | Baltimore, MD | 1 | 2 | 5,000 |
 | St. Louis, MO | 1 | 2 | 5,000 |
+| Wilmington, DE | 1 | 2 | 5,000 |
 
-St. Louis was added in version 8 (2026-10-15), bringing the daily total to 18.
+St. Louis was added in version 8 (2026-10-15), bringing the example pool total to 18.
 It accepts St. Louis/St Louis/Saint Louis with an explicit Missouri location.
 The starting quota follows the newer markets; supply remains unmeasured.
 East St. Louis, Illinois, and nearby municipalities do not satisfy this quota.
+
+Wilmington, Delaware was added in version 9 (2026-10-15), limited to the city.
+The example pool total is 19; the autonomous controller shares a twelve-application
+daily target across all approved locations. Wilmington was selected for its
+[financial services and fintech concentration](https://www.choosedelaware.com/wp-content/uploads/2019/09/Delaware-Fintech-Future-060519-web.pdf).
 
 The Newark market is a **corridor**: Newark, East Newark, Jersey City, Harrison, and
 Hoboken. New York City never counts — a 15-mile sweep from Newark returns 158

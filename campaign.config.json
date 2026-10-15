@@ -1,10 +1,15 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 8,
+  "version": 9,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
-  "description": "Ten-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, and St. Louis MO. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
+  "description": "Eleven-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, St. Louis MO, and Wilmington DE. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
   "versionHistory": [
+    {
+      "version": 9,
+      "date": "2026-10-15",
+      "change": "Added Wilmington, Delaware by corrected user instruction; city only, excluding statewide Delaware. Autonomous daily target raised to twelve across all locations."
+    },
     {
       "version": 8,
       "date": "2026-10-15",
@@ -42,6 +47,35 @@
     }
   ],
   "cities": [
+    {
+      "id": "wilmington",
+      "label": "Wilmington, DE",
+      "state": "DE",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": [
+        "Wilmington, DE",
+        "Wilmington, Delaware",
+        "Wilmington DE",
+        "Wilmington Delaware",
+        "US-DE-Wilmington",
+        "DE - Wilmington"
+      ],
+      "excludedLocationPatterns": [
+        "north wilmington",
+        "greater wilmington",
+        "wilmington manor"
+      ],
+      "commuteAliases": [
+        "Newark, DE",
+        "Dover, DE"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000
+      },
+      "notes": "User correction on 2026-10-15: Wilmington city only. The shared autonomous daily target is twelve applications across all approved locations. Selected for its concentration of financial services and fintech employers; see Delaware Prosperity Partnership fintech research."
+    },
     {
       "id": "st-louis",
       "label": "St. Louis, MO",
