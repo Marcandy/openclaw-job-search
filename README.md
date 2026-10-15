@@ -39,6 +39,12 @@ default to `~/.openclaw/job-search-runtime`, outside the repository.
 - **Regression and browser tests** covering gates, payload approval, crash recovery and synthetic forms
 - **Agent skill included** — `skills/browser-automation/` for reliable
   multi-step browser work in OpenClaw
+- **Public form inventory** — `tools/inspect-form.mjs` finds required questions
+  and grouped choices before approval, without entering applicant data
+
+See [the GitHub skills review](docs/AI_SKILLS_REVIEW_2026-10-15.md) for the
+maintainers, projects, adoption choices and adversarial review behind the latest
+workflow improvements.
 
 ## Why this exists
 

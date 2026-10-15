@@ -16,6 +16,9 @@ test('fresh runtime completes research, payload approval and diagnostics from a 
     const candidates=config.cities.flatMap(c=>Array.from({length:c.dailyQuota},(_,i)=>({cityId:c.id,company:`Test ${c.id} ${i}`,title:'Software Engineer',description:'Build React web applications with 2+ years of experience.',location:c.acceptedLocationAliases[0],url:`https://job-boards.greenhouse.io/example/jobs/${c.id}-${i}`,source:'greenhouse',salaryMax:150000,postedDate:new Date().toISOString(),companyProfile:{headcount:100,isHouseholdName:false,thrivingSignals:[{type:'recent_funding_round',detail:'Synthetic fixture funding evidence',sourceUrl:'https://example.com/evidence',asOf:new Date().toISOString().slice(0,10)}]}})));
     const input=join(dir,'candidates.json');writeFileSync(input,JSON.stringify(candidates));
     run('tools/prepare-runtime.mjs');assert.equal(JSON.parse(run('tools/runtime-doctor.mjs')).ok,true);
+    const generatedSkill=readFileSync(join(dir,'skills','job-search','SKILL.md'),'utf8');
+    assert.match(generatedSkill,/tools\/inspect-form\.mjs/);
+    assert.match(generatedSkill,/never retry uncertain attempts automatically/);
     assert.equal(JSON.parse(run('tools/sync-cron.mjs')).action,'preview');
     run('validate-pool.mjs',[input,'--write-state']);run('tools/prepare-submission.mjs');
     const state=readJson(join(dir,'openclaw-tri-city-state.json'));
