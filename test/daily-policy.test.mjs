@@ -5,7 +5,7 @@ import { dailyUsage, beginDailySubmit, mapRoutineQuestions } from '../lib/daily-
 import { postedSalary, usRemote, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 const now = new Date('2026-10-15T16:00:00Z'),
   policy = {
-    dailyLimit: 10,
+    dailyLimit: 12,
     timezone: 'America/New_York',
     hash: 'standing',
     applicationIntro: 'I build React and Python applications.',
@@ -22,11 +22,11 @@ test('verified pre-delivery failure releases capacity for a different successful
   const store = new EventStore(':memory:');
   const clock = new Date();
   try {
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 11; i++) {
       store.importLedger([{ ...role(i), timestamp: clock.toISOString(), status: 'submitted' }]);
     }
     const run = store.startRun();
-    const blocked = store.claim(run, role(9), 'blocked-manifest');
+    const blocked = store.claim(run, role(11), 'blocked-manifest');
     store.transition(blocked, run, 'filling');
     beginDailySubmit(store, blocked, run, policy, clock);
     store.transition(blocked, run, 'uncertain', { reason: 'CAPTCHA appeared' });
@@ -34,17 +34,17 @@ test('verified pre-delivery failure releases capacity for a different successful
       reason: 'CAPTCHA prevented delivery',
       reconciliationReason: 'No write observed; visible CAPTCHA; page closed',
     });
-    assert.equal(dailyUsage(store, policy.timezone, clock).occupied, 9);
-    const replacement = store.claim(run, role(10), 'replacement-manifest');
+    assert.equal(dailyUsage(store, policy.timezone, clock).occupied, 11);
+    const replacement = store.claim(run, role(12), 'replacement-manifest');
     store.transition(replacement, run, 'filling');
     beginDailySubmit(store, replacement, run, policy, clock);
     store.transition(replacement, run, 'submitted', {
-      receipt: { url: role(10).url, text: 'Application received', observedAt: clock.toISOString() },
+      receipt: { url: role(12).url, text: 'Application received', observedAt: clock.toISOString() },
     });
     assert.deepEqual(dailyUsage(store, policy.timezone, clock), {
       day: dailyUsage(store, policy.timezone, clock).day,
-      confirmed: 10,
-      occupied: 10,
+      confirmed: 12,
+      occupied: 12,
       uncertain: 0,
     });
   } finally {
@@ -54,26 +54,26 @@ test('verified pre-delivery failure releases capacity for a different successful
 test('daily cap includes manual/legacy submissions and uncertain delivery across fresh manifests', () => {
   const s = new EventStore(':memory:');
   try {
-    for (let i = 0; i < 8; i++)
+    for (let i = 0; i < 10; i++)
       s.importLedger([{ ...role(i), timestamp: now.toISOString(), status: 'submitted' }]);
     s.importLedger([{ ...role(0), timestamp: '2026-10-15T17:00:00Z', status: 'submitted' }]);
     const run = s.startRun();
-    const a = s.claim(run, role(8), 'manifest-a');
+    const a = s.claim(run, role(10), 'manifest-a');
     s.transition(a, run, 'filling');
     beginDailySubmit(s, a, run, policy, now);
     s.transition(a, run, 'uncertain', { reason: 'Timeout' });
     // Pin synthetic update time: native transitions use the actual clock.
     s.db.prepare('UPDATE applications SET updated_at=? WHERE id=?').run(now.toISOString(), a);
-    const b = s.claim(run, role(9), 'manifest-b');
+    const b = s.claim(run, role(11), 'manifest-b');
     s.transition(b, run, 'filling');
     beginDailySubmit(s, b, run, policy, now);
     assert.deepEqual(dailyUsage(s, policy.timezone, now), {
       day: '2026-10-15',
-      confirmed: 8,
-      occupied: 10,
+      confirmed: 10,
+      occupied: 12,
       uncertain: 2,
     });
-    const c = s.claim(run, role(10), 'manifest-c');
+    const c = s.claim(run, role(12), 'manifest-c');
     s.transition(c, run, 'filling');
     assert.throws(() => beginDailySubmit(s, c, run, policy, now), /limit/);
     assert.equal(s.get(c).state, 'filling');

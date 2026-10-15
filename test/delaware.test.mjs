@@ -4,19 +4,15 @@ import { readJson } from '../lib/runtime.mjs';
 import { checkLocation } from '../lib/role-filter.mjs';
 
 const config = readJson(new URL('../campaign.config.json', import.meta.url));
-const delaware = config.cities.find((city) => city.id === 'delaware');
+const delaware = config.cities.find((city) => city.id === 'wilmington');
 
-test('Delaware accepts explicit state locations, including Wilmington, Newark and Dover', () => {
+test('Wilmington accepts explicit Delaware city locations', () => {
   for (const location of [
-    'Delaware',
-    'DE',
     'Wilmington, DE',
-    'Newark, Delaware (Hybrid)',
-    'Dover, DE, USA',
-    'Lewes, Delaware, United States',
-    'US-DE-Middletown',
-    'Milford, DE 19963',
-    'Remote - Delaware',
+    'Wilmington, Delaware (Hybrid)',
+    'Wilmington, DE, USA',
+    'US-DE-Wilmington',
+    'Wilmington, DE 19801',
   ]) {
     assert.equal(checkLocation({ location }, delaware).ok, true, location);
   }
@@ -29,8 +25,15 @@ test('Delaware accepts explicit state locations, including Wilmington, Newark an
   );
 });
 
-test('Delaware rejects same-name cities, counties and neighboring states', () => {
+test('Wilmington rejects statewide Delaware, other Delaware cities and neighboring states', () => {
   for (const location of [
+    'Delaware',
+    'DE',
+    'Newark, DE',
+    'Dover, Delaware',
+    'North Wilmington, DE',
+    'Wilmington Manor, DE',
+    'Greater Wilmington, DE',
     'Delaware, OH',
     'Delaware, Ohio',
     'Delaware County, PA',

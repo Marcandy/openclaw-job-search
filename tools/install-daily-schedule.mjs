@@ -11,7 +11,7 @@ const args = process.argv.slice(2),
 const runtime = loadRuntime(),
   cli = at('--cli');
 if (!cli) throw Error('Supply the installed OpenClaw CLI entrypoint with --cli');
-const name = 'job-search-daily-ten',
+const name = 'job-search-daily',
   schedule = '30 12,16 * * *';
 const policyPath = join(runtime.root, 'autonomous-policy.json');
 const argv = [
@@ -38,6 +38,7 @@ const before = call(['cron', 'list', '--all', '--json']);
 const matches = before.jobs.filter(
   (j) =>
     j.name === name ||
+    j.name === 'job-search-daily-ten' ||
     j.name === 'newark-sanjose-chicago-3-2-2' ||
     j.name === 'job-search-fullstack-research',
 );
@@ -47,7 +48,7 @@ const flags = [
   '--name',
   name,
   '--description',
-  'Autonomous job applications: target ten per New York day, confirmed facts, dedupe and receipts; catch up at 16:30.',
+  `Autonomous job applications: target ${readJson(policyPath).dailyLimit} per New York day, confirmed facts, dedupe and receipts; catch up at 16:30.`,
   '--command-argv',
   JSON.stringify(argv),
   '--command-cwd',
