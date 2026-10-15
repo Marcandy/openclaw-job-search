@@ -44,7 +44,9 @@ const fail = (msg, extra = {}) => {
 };
 
 if (!['authorized', 'submitting'].includes(state.status)) {
-  fail(`state status is "${state.status}", expected "authorized". Submission must not run.`, { status: state.status });
+  fail(`state status is "${state.status}", expected "authorized". Submission must not run.`, {
+    status: state.status,
+  });
 }
 const auth = state.authorization;
 if (!auth) fail('state.authorization is missing');
@@ -68,15 +70,20 @@ if (liveHash !== authorizedHash) {
   const removed = [...authorizedSet].filter((u) => !liveSet.has(u));
   fail(
     `pool hash mismatch. The pool changed after authorization.\n` +
-    `  authorized: ${authorizedHash}\n  current:    ${liveHash}\n` +
-    (added.length ? `  ADDED (never authorized):\n${added.map((u) => `    + ${u}`).join('\n')}\n` : '') +
-    (removed.length ? `  REMOVED:\n${removed.map((u) => `    - ${u}`).join('\n')}\n` : ''),
+      `  authorized: ${authorizedHash}\n  current:    ${liveHash}\n` +
+      (added.length
+        ? `  ADDED (never authorized):\n${added.map((u) => `    + ${u}`).join('\n')}\n`
+        : '') +
+      (removed.length ? `  REMOVED:\n${removed.map((u) => `    - ${u}`).join('\n')}\n` : ''),
     { authorizedHash, liveHash, added, removed },
   );
 }
 
-try { verifyManifestAuthorization(state, runtime); }
-catch (err) { fail(err.message); }
+try {
+  verifyManifestAuthorization(state, runtime);
+} catch (err) {
+  fail(err.message);
+}
 
 const result = {
   ok: true,

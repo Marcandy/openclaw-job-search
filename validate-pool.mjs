@@ -22,7 +22,12 @@ import { loadRuntime, readJson, atomicJson } from './lib/runtime.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { buildPool, buildBlockerIndex, canonicalizeUrl, normalizeCompany } from './lib/role-filter.mjs';
+import {
+  buildPool,
+  buildBlockerIndex,
+  canonicalizeUrl,
+  normalizeCompany,
+} from './lib/role-filter.mjs';
 import { atsOf, atsStats, parseCsv as parseLedgerCsv } from './tools/ats-stats.mjs';
 import { routeResume } from './lib/resume-routing.mjs';
 import { validateData } from './lib/schemas.mjs';
@@ -68,29 +73,45 @@ if (!candidatesPath) {
 /** Minimal RFC4180 CSV parser - the ledger has quoted commas and newlines in notes. */
 function parseCsv(text) {
   const rows = [];
-  let row = [], field = '', inQuotes = false;
+  let row = [],
+    field = '',
+    inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
       if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
       } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (c !== '\r') field += c;
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else if (c !== '\r') field += c;
   }
-  if (field || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   const header = rows.shift().map((h) => h.trim());
-  return rows.filter((r) => r.length > 1).map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
+  return rows
+    .filter((r) => r.length > 1)
+    .map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
 /** Build the duplicate index from the authoritative CSV ledger. */
 function loadLedgerIndex(csvPath) {
   let text;
-  try { text = readText(csvPath); }
-  catch (err) {
+  try {
+    text = readText(csvPath);
+  } catch (err) {
     if (err.code === 'ENOENT') {
       // A fresh clone has no ledger yet: start empty rather than refusing to run.
       console.error(`note: no application ledger at ${csvPath} - starting with an empty history`);
@@ -126,14 +147,22 @@ function loadLedgerIndex(csvPath) {
   const SUPPRESSING = new Set(['submitted', 'drafted', 'reviewed', 'closed']);
   let retryable = 0;
   for (const r of rows) {
-    const status = String(r.status ?? '').trim().toLowerCase();
-    if (!SUPPRESSING.has(status)) { retryable++; continue; }
+    const status = String(r.status ?? '')
+      .trim()
+      .toLowerCase();
+    if (!SUPPRESSING.has(status)) {
+      retryable++;
+      continue;
+    }
     const u = canonicalizeUrl(r.url);
     if (u) knownUrls.add(u);
-    if (r.company && r.title) knownCompanyTitles.add(`${normalizeCompany(r.company)}::${r.title.toLowerCase().trim()}`);
+    if (r.company && r.title)
+      knownCompanyTitles.add(`${normalizeCompany(r.company)}::${r.title.toLowerCase().trim()}`);
   }
   if (retryable) {
-    console.log(`note: ${retryable} ledger row(s) are blocked/discovered and do NOT suppress a retry.`);
+    console.log(
+      `note: ${retryable} ledger row(s) are blocked/discovered and do NOT suppress a retry.`,
+    );
   }
   const blockerIndex = buildBlockerIndex(rows, config);
   return { knownUrls, knownCompanyTitles, blockerIndex, rowCount: rows.length };
@@ -143,8 +172,9 @@ let candidates;
 try {
   const parsed = JSON.parse(readText(candidatesPath));
   candidates = Array.isArray(parsed) ? parsed : parsed.candidates;
-  if (!Array.isArray(candidates)) throw new Error('expected an array, or an object with a "candidates" array');
-  candidates.forEach(c => validateData('candidate',c));
+  if (!Array.isArray(candidates))
+    throw new Error('expected an array, or an object with a "candidates" array');
+  candidates.forEach((c) => validateData('candidate', c));
 } catch (err) {
   console.error(`FATAL: cannot parse ${candidatesPath}: ${err.message}`);
   process.exit(2);
@@ -152,8 +182,16 @@ try {
 
 const ledger = loadLedgerIndex(config.paths.ledgerCsv);
 const blockerMemoryPath = join(dirname(config.paths.state), 'blockers.json');
-try { ledger.structuredBlockers = readJson(blockerMemoryPath); } catch (e) { if (e.code !== 'ENOENT') throw e; }
-try { ledger.facts = readJson(config.paths.facts); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+try {
+  ledger.structuredBlockers = readJson(blockerMemoryPath);
+} catch (e) {
+  if (e.code !== 'ENOENT') throw e;
+}
+try {
+  ledger.facts = readJson(config.paths.facts);
+} catch (e) {
+  if (e.code !== 'ENOENT') throw e;
+}
 const pool = buildPool(candidates, config, ledger);
 const blockingShortfalls = pool.quotaShortfalls
   .filter((s) => s.bucket !== 'backup')
@@ -172,7 +210,9 @@ const blockingShortfalls = pool.quotaShortfalls
 let atsConversion = {};
 try {
   atsConversion = atsStats(parseLedgerCsv(readText(config.paths.ledgerCsv)));
-} catch { /* reporting only; never block validation on it */ }
+} catch {
+  /* reporting only; never block validation on it */
+}
 
 function atsNote(role) {
   const a = atsOf(role.url ?? role.canonicalUrl ?? '');
@@ -188,19 +228,30 @@ if (wantJson) {
 } else {
   const money = (n) => (n == null ? 'not posted' : `$${n.toLocaleString()}`);
   console.log(`\n=== POOL VALIDATION - ${config.campaign} (v${config.version}) ===`);
-  console.log(`candidates in: ${candidates.length}   ledger rows checked: ${ledger.rowCount}   companies with structural blockers: ${ledger.blockerIndex.size}`);
-  console.log(`quota: ${config.cities.map((c) => `${c.label} ${c.dailyQuota}`).join('  |  ')}   total ${pool.totalQuota}`);
+  console.log(
+    `candidates in: ${candidates.length}   ledger rows checked: ${ledger.rowCount}   companies with structural blockers: ${ledger.blockerIndex.size}`,
+  );
+  console.log(
+    `quota: ${config.cities.map((c) => `${c.label} ${c.dailyQuota}`).join('  |  ')}   total ${pool.totalQuota}`,
+  );
   console.log(`poolHash: ${pool.poolHash}\n`);
 
   for (const city of config.cities) {
     const b = pool.byCity[city.id];
-    console.log(`--- ${b.label} - ${b.primary.length}/${b.quota} primary, ${b.backup.length} backup ---`);
-    for (const [bucket, entries] of [['PRIMARY', b.primary], ['BACKUP', b.backup]]) {
+    console.log(
+      `--- ${b.label} - ${b.primary.length}/${b.quota} primary, ${b.backup.length} backup ---`,
+    );
+    for (const [bucket, entries] of [
+      ['PRIMARY', b.primary],
+      ['BACKUP', b.backup],
+    ]) {
       for (const e of entries) {
         const cp = e.checks.companyProfile;
         console.log(`  [${bucket}] ${e.company} - ${e.title}`);
         console.log(`      ${e.url}`);
-        console.log(`      band=${cp.band} household=${cp.isHouseholdName} signals=${cp.validThrivingSignals} ats=${e.ats.platform}(t${e.ats.tier}) score=${e.score}`);
+        console.log(
+          `      band=${cp.band} household=${cp.isHouseholdName} signals=${cp.validThrivingSignals} ats=${e.ats.platform}(t${e.ats.tier}) score=${e.score}`,
+        );
         console.log(`      conversion: ${atsNote(e)}`);
         for (const u of e.uncertainties) console.log(`      ! ${u.check}: ${u.uncertainty}`);
         for (const n of e.notes) console.log(`      ~ ${n}`);
@@ -221,7 +272,9 @@ if (wantJson) {
   if (pool.quotaShortfalls.length) {
     console.log('--- QUOTA SHORTFALLS ---');
     for (const s of pool.quotaShortfalls) {
-      console.log(`  ${s.city}: ${s.bucket ?? 'primary'} needs ${s.needed}, found ${s.found} (short ${s.shortfall})`);
+      console.log(
+        `  ${s.city}: ${s.bucket ?? 'primary'} needs ${s.needed}, found ${s.found} (short ${s.shortfall})`,
+      );
     }
     console.log('');
   }
@@ -229,9 +282,18 @@ if (wantJson) {
 
 if (writeState) {
   const now = new Date();
-  const campaignDate = new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const campaignDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: config.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
   let prior = {};
-  try { prior = JSON.parse(readText(statePath)); } catch { /* first run */ }
+  try {
+    prior = JSON.parse(readText(statePath));
+  } catch {
+    /* first run */
+  }
 
   const sameDay = prior.campaignDate === campaignDate;
 
@@ -242,9 +304,9 @@ if (writeState) {
   if (sameDay && (prior.status === 'authorized' || prior.status === 'submitting')) {
     console.error(
       `REFUSED to write state: today's pool is already "${prior.status}".\n` +
-      `  authorized: ${prior.authorization?.authorizedAt ?? 'n/a'}\n` +
-      `  confirmed:  ${JSON.stringify(prior.visibleConfirmedSubmissionsToday ?? {})}\n` +
-      `Finish or explicitly reset the current batch before writing a new pool.`,
+        `  authorized: ${prior.authorization?.authorizedAt ?? 'n/a'}\n` +
+        `  confirmed:  ${JSON.stringify(prior.visibleConfirmedSubmissionsToday ?? {})}\n` +
+        `Finish or explicitly reset the current batch before writing a new pool.`,
     );
     process.exit(1);
   }
@@ -265,29 +327,41 @@ if (writeState) {
     researchOnly: true,
     authorization: null,
     dailyQuota: Object.fromEntries(config.cities.map((c) => [c.label, c.dailyQuota])),
-    visibleConfirmedSubmissionsToday: Object.fromEntries(config.cities.map((c) => [c.label, priorCounts[c.label] ?? 0])),
+    visibleConfirmedSubmissionsToday: Object.fromEntries(
+      config.cities.map((c) => [c.label, priorCounts[c.label] ?? 0]),
+    ),
     quotaShortfalls: pool.quotaShortfalls,
     waivedCities: waivedCities.length ? waivedCities : undefined,
-    pool: Object.fromEntries(config.cities.map((c) => {
-      const b = pool.byCity[c.id];
-      const strip = (e) => ({
-        company: e.company, title: e.title, location: e.checks.location.ok ? e.city : e.city,
-        url: e.url, canonicalUrl: e.canonicalUrl, source: e.ats.platform,
-        headcountBand: e.checks.companyProfile.band,
-        isHouseholdName: e.checks.companyProfile.isHouseholdName,
-        thrivingSignals: e.checks.companyProfile.validThrivingSignals,
-        score: e.score, status: 'awaiting_authorization',
-        uncertainties: e.uncertainties.map((u) => u.uncertainty),
-        ...routeResume(candidates.find(r => canonicalizeUrl(r.url) === e.canonicalUrl) ?? {}, config),
-        answers: candidates.find(r => canonicalizeUrl(r.url) === e.canonicalUrl)?.answers ?? {},
-        postingId: candidates.find(r => canonicalizeUrl(r.url) === e.canonicalUrl)?.postingId,
-      });
-      return [c.label, { primary: b.primary.map(strip), backup: b.backup.map(strip) }];
-    })),
+    pool: Object.fromEntries(
+      config.cities.map((c) => {
+        const b = pool.byCity[c.id];
+        const strip = (e) => ({
+          company: e.company,
+          title: e.title,
+          location: e.checks.location.ok ? e.city : e.city,
+          url: e.url,
+          canonicalUrl: e.canonicalUrl,
+          source: e.ats.platform,
+          headcountBand: e.checks.companyProfile.band,
+          isHouseholdName: e.checks.companyProfile.isHouseholdName,
+          thrivingSignals: e.checks.companyProfile.validThrivingSignals,
+          score: e.score,
+          status: 'awaiting_authorization',
+          uncertainties: e.uncertainties.map((u) => u.uncertainty),
+          ...routeResume(
+            candidates.find((r) => canonicalizeUrl(r.url) === e.canonicalUrl) ?? {},
+            config,
+          ),
+          answers: candidates.find((r) => canonicalizeUrl(r.url) === e.canonicalUrl)?.answers ?? {},
+          postingId: candidates.find((r) => canonicalizeUrl(r.url) === e.canonicalUrl)?.postingId,
+        });
+        return [c.label, { primary: b.primary.map(strip), backup: b.backup.map(strip) }];
+      }),
+    ),
     validatedBy: 'openclaw-campaign/validate-pool.mjs',
     validatedAt: now.toISOString(),
   };
-  atomicJson(statePath,state);
+  atomicJson(statePath, state);
   console.log(`state written: ${statePath}`);
 }
 
@@ -296,17 +370,26 @@ const placedBanned = Object.values(pool.byCity)
   .filter((e) => e.verdict === 'rejected');
 
 if (placedBanned.length) {
-  console.error(`FAIL: ${placedBanned.length} rejected role(s) were placed in a bucket. This is a filter bug.`);
+  console.error(
+    `FAIL: ${placedBanned.length} rejected role(s) were placed in a bucket. This is a filter bug.`,
+  );
   process.exit(1);
 }
 if (blockingShortfalls.length) {
-  console.error('INCOMPLETE: at least one city has fewer primary roles than its quota. Research more before requesting authorization.');
-  for (const s of blockingShortfalls) console.error(`  ${s.city}: needs ${s.needed}, found ${s.found}`);
-  console.error('If a city genuinely cannot be filled, re-run with --waive-city "<label>" to accept the shortfall.');
+  console.error(
+    'INCOMPLETE: at least one city has fewer primary roles than its quota. Research more before requesting authorization.',
+  );
+  for (const s of blockingShortfalls)
+    console.error(`  ${s.city}: needs ${s.needed}, found ${s.found}`);
+  console.error(
+    'If a city genuinely cannot be filled, re-run with --waive-city "<label>" to accept the shortfall.',
+  );
   process.exit(1);
 }
 if (waivedCities.length) {
   console.log(`WAIVED: ${waivedCities.join(', ')} accepted short by explicit instruction.`);
 }
-console.log('OK: pool is clean and quota is met. Safe to present for exact-destination authorization.');
+console.log(
+  'OK: pool is clean and quota is met. Safe to present for exact-destination authorization.',
+);
 process.exit(0);

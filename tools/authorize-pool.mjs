@@ -33,22 +33,33 @@ const { config } = runtime;
 const statePath = process.env.CAMPAIGN_STATE_PATH ?? config.paths.state;
 
 const args = process.argv.slice(2);
-const at = (flag) => { const i = args.indexOf(flag); return i === -1 ? null : args[i + 1]; };
+const at = (flag) => {
+  const i = args.indexOf(flag);
+  return i === -1 ? null : args[i + 1];
+};
 const confirmHash = at('--confirm-hash');
 const by = at('--by') ?? 'user';
 
 if (!confirmHash) {
   console.error('usage: node tools/authorize-pool.mjs --confirm-hash <poolHash> [--by "name"]');
-  console.error('\nThe poolHash is printed by validate-pool.mjs and shown in the authorization request.');
+  console.error(
+    '\nThe poolHash is printed by validate-pool.mjs and shown in the authorization request.',
+  );
   process.exit(2);
 }
 
 let state;
-try { state = JSON.parse(readText(statePath)); }
-catch (err) { console.error(`FATAL: cannot read state at ${statePath}: ${err.message}`); process.exit(2); }
+try {
+  state = JSON.parse(readText(statePath));
+} catch (err) {
+  console.error(`FATAL: cannot read state at ${statePath}: ${err.message}`);
+  process.exit(2);
+}
 
 if (state.status === 'authorized') {
-  console.error(`REFUSED: today's pool is already authorized (${state.authorization?.authorizedAt}).`);
+  console.error(
+    `REFUSED: today's pool is already authorized (${state.authorization?.authorizedAt}).`,
+  );
   process.exit(1);
 }
 if (state.status !== 'awaiting_authorization') {
@@ -56,22 +67,31 @@ if (state.status !== 'awaiting_authorization') {
   process.exit(1);
 }
 
-const entries = Object.values(state.pool ?? {}).flatMap((c) => [...(c.primary ?? []), ...(c.backup ?? [])]);
+const entries = Object.values(state.pool ?? {}).flatMap((c) => [
+  ...(c.primary ?? []),
+  ...(c.backup ?? []),
+]);
 const urls = entries.map((r) => r.canonicalUrl ?? r.url);
 const actual = poolHash(urls);
 let payloadHash;
 try {
   if (!state.submissionManifest) throw new Error('Prepare a submission manifest first');
   validateManifest(state.submissionManifest, runtime);
-  if (poolHash(state.submissionManifest.destinations.map(d => d.url)) !== actual) throw new Error('Manifest destinations differ from pool');
+  if (poolHash(state.submissionManifest.destinations.map((d) => d.url)) !== actual)
+    throw new Error('Manifest destinations differ from pool');
   payloadHash = manifestHash(state.submissionManifest);
-} catch (err) { console.error(`REFUSED: ${err.message}`); process.exit(1); }
+} catch (err) {
+  console.error(`REFUSED: ${err.message}`);
+  process.exit(1);
+}
 
 if (payloadHash !== confirmHash) {
   console.error('REFUSED: the confirmed hash does not match the current pool.');
   console.error(`  you confirmed: ${confirmHash}`);
   console.error(`  current manifest:  ${payloadHash}`);
-  console.error('\nThe pool changed since it was shown to you. Re-read the pool report before authorizing.');
+  console.error(
+    '\nThe pool changed since it was shown to you. Re-read the pool report before authorizing.',
+  );
   process.exit(1);
 }
 
@@ -87,7 +107,8 @@ state.authorization = {
   expiresAt: state.submissionManifest.expiresAt,
   destinationCount: urls.length,
   exactUrls: urls,
-  scope: 'Covers every destination listed above for this campaign date. Ordinary supported fields and the final submit action do not require further approval. Does not cover unknown personal facts, legal attestations, or CAPTCHA bypass.',
+  scope:
+    'Covers every destination listed above for this campaign date. Ordinary supported fields and the final submit action do not require further approval. Does not cover unknown personal facts, legal attestations, or CAPTCHA bypass.',
 };
 
 atomicJson(statePath, state);

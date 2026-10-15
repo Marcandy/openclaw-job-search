@@ -46,7 +46,9 @@ const jsonOut = args.includes('--json') ? args[args.indexOf('--json') + 1] : nul
 const doFix = args.includes('--fix');
 
 if (!candidatesPath) {
-  console.error('usage: node tools/verify-candidates.mjs <candidates.json> [--json out.json] [--fix]');
+  console.error(
+    'usage: node tools/verify-candidates.mjs <candidates.json> [--json out.json] [--fix]',
+  );
   process.exit(2);
 }
 
@@ -70,24 +72,28 @@ function toText(html) {
 function salaryAppears(text, amount) {
   if (amount == null) return null;
   const n = Math.round(amount);
-  const variants = new Set([
-    String(n),
-    n.toLocaleString('en-US'),
-    `$${n.toLocaleString('en-US')}`,
-  ]);
+  const variants = new Set([String(n), n.toLocaleString('en-US'), `$${n.toLocaleString('en-US')}`]);
   if (n >= 1000 && n % 1000 === 0) {
     const k = n / 1000;
-    variants.add(`${k}k`); variants.add(`${k}K`);
-    variants.add(`$${k}k`); variants.add(`$${k}K`);
+    variants.add(`${k}k`);
+    variants.add(`${k}K`);
+    variants.add(`$${k}k`);
+    variants.add(`$${k}K`);
   }
   const hay = text.toLowerCase();
   return [...variants].some((v) => hay.includes(v.toLowerCase()));
 }
 
 const CLOSED_MARKERS = [
-  'no longer accepting', 'no longer available', 'position has been filled',
-  'this job is closed', 'posting is closed', 'job is no longer',
-  'we are no longer', 'application deadline has passed', 'req is closed',
+  'no longer accepting',
+  'no longer available',
+  'position has been filled',
+  'this job is closed',
+  'posting is closed',
+  'job is no longer',
+  'we are no longer',
+  'application deadline has passed',
+  'req is closed',
 ];
 
 /**
@@ -114,8 +120,12 @@ async function fetchAshbyPosting(url) {
     }
     // Flatten the structured record into text the comparators can search.
     const parts = [
-      job.title, job.location, job.department, job.employmentType,
-      job.descriptionPlain ?? '', JSON.stringify(job.compensation ?? {}),
+      job.title,
+      job.location,
+      job.department,
+      job.employmentType,
+      job.descriptionPlain ?? '',
+      JSON.stringify(job.compensation ?? {}),
       JSON.stringify(job.secondaryLocations ?? []),
     ];
     return { status: 200, text: parts.filter(Boolean).join(' | '), viaApi: true };
@@ -137,8 +147,9 @@ async function fetchPosting(url) {
         // Some ATS hosts refuse an obviously scripted client. This is a plain
         // read of a public page, not an attempt to defeat a bot wall - a 403 is
         // reported as unverifiable rather than worked around.
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
-        'accept': 'text/html,application/xhtml+xml',
+        'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+        accept: 'text/html,application/xhtml+xml',
         'accept-language': 'en-US,en;q=0.9',
       },
     });
@@ -158,15 +169,27 @@ function compare(candidate, page) {
   const lower = text.toLowerCase();
 
   if (page.status === 0) {
-    findings.push({ level: 'unverifiable', field: 'fetch', detail: `could not fetch: ${page.error}` });
+    findings.push({
+      level: 'unverifiable',
+      field: 'fetch',
+      detail: `could not fetch: ${page.error}`,
+    });
     return findings;
   }
   if (page.status === 404 || page.status === 410) {
-    findings.push({ level: 'error', field: 'liveness', detail: `HTTP ${page.status} — posting is gone` });
+    findings.push({
+      level: 'error',
+      field: 'liveness',
+      detail: `HTTP ${page.status} — posting is gone`,
+    });
     return findings;
   }
   if (page.status === 403 || page.status === 401) {
-    findings.push({ level: 'unverifiable', field: 'fetch', detail: `HTTP ${page.status} — host refuses scripted reads; verify in the browser` });
+    findings.push({
+      level: 'unverifiable',
+      field: 'fetch',
+      detail: `HTTP ${page.status} — host refuses scripted reads; verify in the browser`,
+    });
     return findings;
   }
   if (page.status >= 400) {
@@ -174,7 +197,11 @@ function compare(candidate, page) {
     return findings;
   }
   if (text.length < 400) {
-    findings.push({ level: 'unverifiable', field: 'fetch', detail: `page rendered only ${text.length} chars (likely JS-only); verify in the browser` });
+    findings.push({
+      level: 'unverifiable',
+      field: 'fetch',
+      detail: `page rendered only ${text.length} chars (likely JS-only); verify in the browser`,
+    });
     return findings;
   }
 
@@ -193,14 +220,24 @@ function compare(candidate, page) {
 
   // Title: match on distinctive words rather than the whole string, since
   // boards often reformat punctuation and suffixes.
-  const words = String(candidate.title ?? '').toLowerCase().match(/[a-z]{4,}/g) ?? [];
+  const words =
+    String(candidate.title ?? '')
+      .toLowerCase()
+      .match(/[a-z]{4,}/g) ?? [];
   const hits = words.filter((w) => lower.includes(w));
   if (words.length && hits.length / words.length < 0.5) {
-    findings.push({ level: 'warn', field: 'title', detail: `only ${hits.length}/${words.length} title words found on the page` });
+    findings.push({
+      level: 'warn',
+      field: 'title',
+      detail: `only ${hits.length}/${words.length} title words found on the page`,
+    });
   }
 
   // Salary: the Kai Cyber failure mode.
-  for (const [field, amount] of [['salaryMin', candidate.salaryMin], ['salaryMax', candidate.salaryMax]]) {
+  for (const [field, amount] of [
+    ['salaryMin', candidate.salaryMin],
+    ['salaryMax', candidate.salaryMax],
+  ]) {
     if (amount == null) continue;
     if (!salaryAppears(text, amount)) {
       findings.push({
@@ -212,8 +249,15 @@ function compare(candidate, page) {
   }
 
   // A page with no currency symbol at all cannot be corroborating a salary.
-  if ((candidate.salaryMin != null || candidate.salaryMax != null) && !/\$|USD|salary|compensation|pay range/i.test(text)) {
-    findings.push({ level: 'warn', field: 'salary', detail: 'posting shows no compensation language at all, yet a salary is recorded' });
+  if (
+    (candidate.salaryMin != null || candidate.salaryMax != null) &&
+    !/\$|USD|salary|compensation|pay range/i.test(text)
+  ) {
+    findings.push({
+      level: 'warn',
+      field: 'salary',
+      detail: 'posting shows no compensation language at all, yet a salary is recorded',
+    });
   }
 
   // Headcount sitting exactly on the city ceiling is the Super Micro pattern.
@@ -222,7 +266,8 @@ function compare(candidate, page) {
   const hc = candidate.companyProfile?.headcount;
   if (typeof hc === 'number' && hc === ceiling) {
     findings.push({
-      level: 'warn', field: 'headcount',
+      level: 'warn',
+      field: 'headcount',
       detail: `headcount equals the ${city.label} ceiling exactly (${ceiling.toLocaleString('en-US')}) — verify against a public source`,
     });
   }
@@ -232,7 +277,10 @@ function compare(candidate, page) {
 
 const data = JSON.parse(readText(candidatesPath));
 const candidates = Array.isArray(data) ? data : data.candidates;
-if (!Array.isArray(candidates)) { console.error('expected a candidates array'); process.exit(2); }
+if (!Array.isArray(candidates)) {
+  console.error('expected a candidates array');
+  process.exit(2);
+}
 
 console.log(`\n=== VERIFYING ${candidates.length} CANDIDATE(S) AGAINST LIVE POSTINGS ===\n`);
 
@@ -252,9 +300,20 @@ for (const c of candidates) {
 
   if (doFix) {
     for (const f of errs) {
-      if (f.field === 'salaryMin') { c.salaryMin = null; c.salaryCorrection = (c.salaryCorrection ?? '') + ' [verifier nulled salaryMin: not present on posting]'; }
-      if (f.field === 'salaryMax') { c.salaryMax = null; c.salaryCorrection = (c.salaryCorrection ?? '') + ' [verifier nulled salaryMax: not present on posting]'; }
-      if (f.field === 'liveness') { delete c.verifiedActiveOn; c.livenessNote = f.detail; }
+      if (f.field === 'salaryMin') {
+        c.salaryMin = null;
+        c.salaryCorrection =
+          (c.salaryCorrection ?? '') + ' [verifier nulled salaryMin: not present on posting]';
+      }
+      if (f.field === 'salaryMax') {
+        c.salaryMax = null;
+        c.salaryCorrection =
+          (c.salaryCorrection ?? '') + ' [verifier nulled salaryMax: not present on posting]';
+      }
+      if (f.field === 'liveness') {
+        delete c.verifiedActiveOn;
+        c.livenessNote = f.detail;
+      }
     }
   }
 }
@@ -263,15 +322,24 @@ const failed = results.filter((r) => r.findings.some((f) => f.level === 'error')
 const warned = results.filter((r) => r.findings.some((f) => f.level === 'warn'));
 const unver = results.filter((r) => r.findings.some((f) => f.level === 'unverifiable'));
 
-console.log(`\n--- ${results.length} checked · ${failed.length} failed · ${warned.length} warned · ${unver.length} unverifiable ---`);
-if (unver.length) console.log('Unverifiable means the host blocked a scripted read, not that the role is bad. Check those in the browser.');
+console.log(
+  `\n--- ${results.length} checked · ${failed.length} failed · ${warned.length} warned · ${unver.length} unverifiable ---`,
+);
+if (unver.length)
+  console.log(
+    'Unverifiable means the host blocked a scripted read, not that the role is bad. Check those in the browser.',
+  );
 
 if (doFix) {
   writeFileSync(candidatesPath, JSON.stringify(data, null, 2), 'utf8');
   console.log(`\napplied --fix to ${candidatesPath} (values only ever nulled, never invented)`);
 }
 if (jsonOut) {
-  writeFileSync(jsonOut, JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2), 'utf8');
+  writeFileSync(
+    jsonOut,
+    JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2),
+    'utf8',
+  );
   console.log(`wrote ${jsonOut}`);
 }
 

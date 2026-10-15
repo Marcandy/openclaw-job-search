@@ -27,21 +27,37 @@ const wantJson = process.argv.includes('--json');
 /** Minimal RFC4180 parser; the ledger quotes commas and newlines inside notes. */
 function parseCsv(text) {
   const rows = [];
-  let row = [], field = '', inQuotes = false;
+  let row = [],
+    field = '',
+    inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
       if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
       } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (c !== '\r') field += c;
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else if (c !== '\r') field += c;
   }
-  if (field || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   const header = rows.shift().map((h) => h.trim());
-  return rows.filter((r) => r.length > 1).map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
+  return rows
+    .filter((r) => r.length > 1)
+    .map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
 const rows = parseCsv(readText(config.paths.ledgerCsv));
@@ -53,7 +69,9 @@ if (wantJson) {
 } else if (entries.length === 0) {
   console.log('No companies with structural blockers recorded.');
 } else {
-  console.log(`${entries.length} compan${entries.length === 1 ? 'y' : 'ies'} blocked by a company-level form question:\n`);
+  console.log(
+    `${entries.length} compan${entries.length === 1 ? 'y' : 'ies'} blocked by a company-level form question:\n`,
+  );
   for (const e of entries) {
     console.log(`  ${e.company}`);
     console.log(`      matched:  "${e.matched}"`);

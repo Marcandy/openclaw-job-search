@@ -41,8 +41,28 @@ const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
 const { config } = loadRuntime();
 
-export const EXPECTED_HEADER = ['timestamp', 'company', 'title', 'location', 'url', 'source', 'status', 'resume_used', 'notes'];
-export const KNOWN_STATUSES = new Set(['submitted', 'blocked', 'drafted', 'reviewed', 'approved', 'rejected', 'withdrawn', 'closed', 'discovered']);
+export const EXPECTED_HEADER = [
+  'timestamp',
+  'company',
+  'title',
+  'location',
+  'url',
+  'source',
+  'status',
+  'resume_used',
+  'notes',
+];
+export const KNOWN_STATUSES = new Set([
+  'submitted',
+  'blocked',
+  'drafted',
+  'reviewed',
+  'approved',
+  'rejected',
+  'withdrawn',
+  'closed',
+  'discovered',
+]);
 
 /** Audit parsed CSV rows. Returns { problems: [...], duplicateSubmissions: [...] }. */
 export function auditLedger(rows) {
@@ -50,7 +70,11 @@ export function auditLedger(rows) {
   const duplicateSubmissions = [];
   const header = rows[0] ?? [];
   if (EXPECTED_HEADER.some((h, i) => header[i] !== h) || header.length !== EXPECTED_HEADER.length) {
-    problems.push({ line: 1, kind: 'header', detail: `expected ${EXPECTED_HEADER.join(',')} — got ${header.join(',')}` });
+    problems.push({
+      line: 1,
+      kind: 'header',
+      detail: `expected ${EXPECTED_HEADER.join(',')} — got ${header.join(',')}`,
+    });
     return { problems, duplicateSubmissions };
   }
 
@@ -80,7 +104,9 @@ export function auditLedger(rows) {
       if (seen.has(key)) {
         duplicateSubmissions.push({
           kind: 'same-day-duplicate',
-          company, title, url,
+          company,
+          title,
+          url,
           lines: [seen.get(key), line],
           detail: `submitted twice on ${day} (lines ${seen.get(key)} and ${line})`,
         });
@@ -89,7 +115,8 @@ export function auditLedger(rows) {
       }
       const canon = canonicalizeUrl(url);
       const rec = crossDay.get(canon) ?? { days: new Set(), lines: [], company, title, url };
-      rec.days.add(day); rec.lines.push(line);
+      rec.days.add(day);
+      rec.lines.push(line);
       crossDay.set(canon, rec);
     }
   });
@@ -97,8 +124,12 @@ export function auditLedger(rows) {
   for (const rec of crossDay.values()) {
     if (rec.days.size > 1) {
       duplicateSubmissions.push({
-        kind: 'cross-day-repeat', company: rec.company, title: rec.title, url: rec.url,
-        days: [...rec.days], lines: rec.lines,
+        kind: 'cross-day-repeat',
+        company: rec.company,
+        title: rec.title,
+        url: rec.url,
+        days: [...rec.days],
+        lines: rec.lines,
         detail: `submitted on ${rec.days.size} different days (lines ${rec.lines.join(', ')}) - verify each was deliberate`,
       });
     }
@@ -122,10 +153,13 @@ if (invokedDirectly) {
   const ok = problems.length === 0 && sameDay.length === 0;
 
   if (asJson) {
-    console.log(JSON.stringify({ ok, rowCount: rows.length - 1, problems, duplicateSubmissions }, null, 2));
+    console.log(
+      JSON.stringify({ ok, rowCount: rows.length - 1, problems, duplicateSubmissions }, null, 2),
+    );
   } else {
     console.log(`\n=== LEDGER INTEGRITY (${rows.length - 1} rows) ===\n`);
-    if (!problems.length) console.log('  Row shape: OK - header, field counts, timestamps, URLs, statuses all valid.');
+    if (!problems.length)
+      console.log('  Row shape: OK - header, field counts, timestamps, URLs, statuses all valid.');
     for (const p of problems) console.log(`  [PROBLEM] line ${p.line} (${p.kind}): ${p.detail}`);
     if (!sameDay.length) console.log('  Same-day duplicate submissions: none.');
     for (const d of sameDay) console.log(`  [DUPLICATE] ${d.company} — ${d.title}: ${d.detail}`);

@@ -13,14 +13,19 @@
 import { readFileSync } from 'node:fs';
 
 const src = process.argv[2];
-if (!src) { console.error('usage: node tools/legacy-pool-to-candidates.mjs <legacy-state.json>'); process.exit(2); }
+if (!src) {
+  console.error('usage: node tools/legacy-pool-to-candidates.mjs <legacy-state.json>');
+  process.exit(2);
+}
 
 const state = JSON.parse(readFileSync(src, 'utf8'));
 const CITY_IDS = { 'Newark, NJ': 'newark', 'San Jose, CA': 'san-jose', 'Chicago, IL': 'chicago' };
 
 /** Pull a salary range out of the free-text researchNotes the legacy pool used. */
 function salaryFromNotes(notes = '') {
-  const m = notes.match(/\$([\d,]+(?:\.\d+)?)\s*(?:K)?\s*(?:-|to|–)\s*\$?([\d,]+(?:\.\d+)?)\s*(K)?/i);
+  const m = notes.match(
+    /\$([\d,]+(?:\.\d+)?)\s*(?:K)?\s*(?:-|to|–)\s*\$?([\d,]+(?:\.\d+)?)\s*(K)?/i,
+  );
   if (!m) return { salaryMin: null, salaryMax: null };
   const num = (s, k) => {
     const v = Number(String(s).replace(/,/g, ''));

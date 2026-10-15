@@ -47,20 +47,37 @@ const CRON_ID = 'cad8a8a0-22be-4990-9781-f08eb27365a8';
 /** RFC4180-ish parser; the ledger quotes commas and newlines inside notes. */
 function parseCsv(text) {
   const rows = [];
-  let row = [], field = '', inQuotes = false;
+  let row = [],
+    field = '',
+    inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
-      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
-      else field += c;
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
+      } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (c !== '\r') field += c;
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else if (c !== '\r') field += c;
   }
-  if (field || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   const header = rows.shift().map((h) => h.trim());
-  return rows.filter((r) => r.length > 1).map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
+  return rows
+    .filter((r) => r.length > 1)
+    .map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
 /**
@@ -71,53 +88,116 @@ function parseCsv(text) {
 function classifyBlocker(notes) {
   const n = (notes || '').toLowerCase();
   if (/captcha|hcaptcha|recaptcha|are you human|drag the shape/.test(n)) {
-    return { kind: 'captcha', label: 'CAPTCHA', action: 'Solvable by you in the open browser tab', severity: 'actionable' };
+    return {
+      kind: 'captcha',
+      label: 'CAPTCHA',
+      action: 'Solvable by you in the open browser tab',
+      severity: 'actionable',
+    };
   }
   if (/street address|full address|zip code|postal code/.test(n)) {
-    return { kind: 'address', label: 'Home address required', action: 'Blocked by your address-privacy rule', severity: 'policy' };
+    return {
+      kind: 'address',
+      label: 'Home address required',
+      action: 'Blocked by your address-privacy rule',
+      severity: 'policy',
+    };
   }
   if (/u\.s\. person|export.control|citizenship|permanent resident|green card|clearance/.test(n)) {
-    return { kind: 'legal-status', label: 'Citizenship / export control', action: 'Needs a fact you have not supplied', severity: 'needs-fact' };
+    return {
+      kind: 'legal-status',
+      label: 'Citizenship / export control',
+      action: 'Needs a fact you have not supplied',
+      severity: 'needs-fact',
+    };
   }
-  if (/background check|background-check|fingerprint|arbitration|attestation|e-?signature|legal signature/.test(n)) {
-    return { kind: 'legal-consent', label: 'Legal attestation', action: 'Needs your explicit consent decision', severity: 'needs-decision' };
+  if (
+    /background check|background-check|fingerprint|arbitration|attestation|e-?signature|legal signature/.test(
+      n,
+    )
+  ) {
+    return {
+      kind: 'legal-consent',
+      label: 'Legal attestation',
+      action: 'Needs your explicit consent decision',
+      severity: 'needs-decision',
+    };
   }
   if (/degree major|closely related field|gpa|graduation date|school/.test(n)) {
-    return { kind: 'education', label: 'Education detail', action: 'Needs major / school / graduation date', severity: 'needs-fact' };
+    return {
+      kind: 'education',
+      label: 'Education detail',
+      action: 'Needs major / school / graduation date',
+      severity: 'needs-fact',
+    };
   }
   if (/login|sign in|sign-in|account creation|create an account|mfa|verification code/.test(n)) {
-    return { kind: 'account', label: 'Account / login required', action: 'Sign in manually, then re-run', severity: 'actionable' };
+    return {
+      kind: 'account',
+      label: 'Account / login required',
+      action: 'Sign in manually, then re-run',
+      severity: 'actionable',
+    };
   }
   // Hyphenation matters: the first real essay blocker (2026-08-20) wrote
   // "short-answer prompt", which a bare /short answer/ pattern missed entirely.
-  if (/essay|cover letter|written response|why do you|tell us about|short[- ]answer|personal statement|unsupported personal (work )?story|open[- ]ended (question|prompt)|in your own words/.test(n)) {
-    return { kind: 'essay', label: 'Custom essay required', action: 'Needs a written answer from you', severity: 'needs-essay' };
+  if (
+    /essay|cover letter|written response|why do you|tell us about|short[- ]answer|personal statement|unsupported personal (work )?story|open[- ]ended (question|prompt)|in your own words/.test(
+      n,
+    )
+  ) {
+    return {
+      kind: 'essay',
+      label: 'Custom essay required',
+      action: 'Needs a written answer from you',
+      severity: 'needs-essay',
+    };
   }
   if (/relationship|previously employed|relative/.test(n)) {
-    return { kind: 'relationship', label: 'Employee relationship question', action: 'Needs a fact about this employer', severity: 'needs-fact' };
+    return {
+      kind: 'relationship',
+      label: 'Employee relationship question',
+      action: 'Needs a fact about this employer',
+      severity: 'needs-fact',
+    };
   }
   return { kind: 'other', label: 'Other blocker', action: 'Read the note', severity: 'review' };
 }
 
 function loadState() {
-  try { return JSON.parse(readText(config.paths.state)); } catch { return null; }
+  try {
+    return JSON.parse(readText(config.paths.state));
+  } catch {
+    return null;
+  }
 }
 
 function loadLedger() {
-  try { return parseCsv(readText(config.paths.ledgerCsv)); } catch { return []; }
+  try {
+    return parseCsv(readText(config.paths.ledgerCsv));
+  } catch {
+    return [];
+  }
 }
 
 function todayInTz() {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: config.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+    timeZone: config.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   }).format(new Date());
 }
 
 function latestLeadsFile() {
   try {
-    const files = readdirSync(root).filter((f) => /^leads-\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+    const files = readdirSync(root)
+      .filter((f) => /^leads-\d{4}-\d{2}-\d{2}\.json$/.test(f))
+      .sort();
     return files.length ? join(root, files[files.length - 1]) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function buildModel() {
@@ -130,13 +210,21 @@ function buildModel() {
 
   // Quota progress: count only visibly confirmed submissions, per the campaign rule.
   const quota = config.cities.map((c) => {
-    const submitted = todayRows.filter((r) => r.status === 'submitted' && matchesCity(r.location, c)).length;
-    return { label: c.label, quota: c.dailyQuota, submitted, remaining: Math.max(0, c.dailyQuota - submitted) };
+    const submitted = todayRows.filter(
+      (r) => r.status === 'submitted' && matchesCity(r.location, c),
+    ).length;
+    return {
+      label: c.label,
+      quota: c.dailyQuota,
+      submitted,
+      remaining: Math.max(0, c.dailyQuota - submitted),
+    };
   });
 
   // Blocked rows still worth acting on: most recent per company+title.
   const blockedSeen = new Set();
-  const blocked = [...ledger].reverse()
+  const blocked = [...ledger]
+    .reverse()
     .filter((r) => r.status === 'blocked')
     .filter((r) => {
       const k = `${normalizeCompany(r.company)}::${(r.title || '').toLowerCase()}`;
@@ -148,9 +236,14 @@ function buildModel() {
 
   const needsEssay = blocked.filter((b) => b.blocker.severity === 'needs-essay');
   const actionable = blocked.filter((b) => b.blocker.severity === 'actionable');
-  const needsFact = blocked.filter((b) => ['needs-fact', 'needs-decision'].includes(b.blocker.severity));
+  const needsFact = blocked.filter((b) =>
+    ['needs-fact', 'needs-decision'].includes(b.blocker.severity),
+  );
 
-  const statusCounts = ledger.reduce((acc, r) => { acc[r.status] = (acc[r.status] ?? 0) + 1; return acc; }, {});
+  const statusCounts = ledger.reduce((acc, r) => {
+    acc[r.status] = (acc[r.status] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return {
     generatedAt: new Date().toISOString(),
@@ -195,13 +288,24 @@ function triggerSearch() {
   if (runInFlight) return Promise.resolve({ ok: false, error: 'A search is already running.' });
   runInFlight = new Promise((resolve) => {
     const started = Date.now();
-    execFile('openclaw', ['cron', 'run', CRON_ID], { shell: true, timeout: 15 * 60_000, maxBuffer: 8 << 20 },
+    execFile(
+      'openclaw',
+      ['cron', 'run', CRON_ID],
+      { shell: true, timeout: 15 * 60_000, maxBuffer: 8 << 20 },
       (err, stdout, stderr) => {
         runInFlight = null;
-        resolve(err
-          ? { ok: false, error: String(err.message).slice(0, 400), stderr: String(stderr).slice(0, 800), ms: Date.now() - started }
-          : { ok: true, stdout: String(stdout).slice(0, 800), ms: Date.now() - started });
-      });
+        resolve(
+          err
+            ? {
+                ok: false,
+                error: String(err.message).slice(0, 400),
+                stderr: String(stderr).slice(0, 800),
+                ms: Date.now() - started,
+              }
+            : { ok: true, stdout: String(stdout).slice(0, 800), ms: Date.now() - started },
+        );
+      },
+    );
   });
   return runInFlight;
 }
@@ -210,30 +314,45 @@ function triggerSearch() {
 // Rendering
 // ---------------------------------------------------------------------------
 
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const esc = (s) =>
+  String(s ?? '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  );
 
 function render(m) {
   const badge = (t, cls) => `<span class="badge ${cls}">${esc(t)}</span>`;
 
-  const statusBadge = {
-    idle: 'muted', researching: 'info', awaiting_authorization: 'warn',
-    authorized: 'ok', submitting: 'info', quota_complete: 'ok', exhausted: 'muted',
-  }[m.state?.status] ?? 'muted';
+  const statusBadge =
+    {
+      idle: 'muted',
+      researching: 'info',
+      awaiting_authorization: 'warn',
+      authorized: 'ok',
+      submitting: 'info',
+      quota_complete: 'ok',
+      exhausted: 'muted',
+    }[m.state?.status] ?? 'muted';
 
-  const quotaRows = m.quota.map((q) => {
-    const pct = q.quota ? Math.min(100, Math.round((q.submitted / q.quota) * 100)) : 0;
-    const done = q.submitted >= q.quota;
-    return `<div class="qrow">
+  const quotaRows = m.quota
+    .map((q) => {
+      const pct = q.quota ? Math.min(100, Math.round((q.submitted / q.quota) * 100)) : 0;
+      const done = q.submitted >= q.quota;
+      return `<div class="qrow">
       <div class="qlabel">${esc(q.label)}</div>
       <div class="qbar"><div class="qfill ${done ? 'done' : ''}" style="width:${pct}%"></div></div>
       <div class="qnum ${done ? 'ok' : ''}">${q.submitted} / ${q.quota}</div>
     </div>`;
-  }).join('');
+    })
+    .join('');
 
   const attention = [];
 
   if (m.state?.status === 'awaiting_authorization') {
-    const n = Object.values(m.state.pool ?? {}).reduce((a, c) => a + (c.primary?.length ?? 0) + (c.backup?.length ?? 0), 0);
+    const n = Object.values(m.state.pool ?? {}).reduce(
+      (a, c) => a + (c.primary?.length ?? 0) + (c.backup?.length ?? 0),
+      0,
+    );
     attention.push(`<div class="card warn">
       <h3>A batch is waiting for your authorization</h3>
       <p>${n} destination${n === 1 ? '' : 's'} researched and validated. Nothing is sent until you approve.</p>
@@ -255,51 +374,79 @@ node tools/authorize-pool.mjs --confirm-hash ${esc(m.state.poolHash ?? '')} --by
     attention.push(`<div class="card info">
       <h3>${m.actionable.length} application${m.actionable.length === 1 ? '' : 's'} you can finish yourself</h3>
       <p>These stopped at a CAPTCHA or login. The form is already filled.</p>
-      ${m.actionable.map((b) => `<div class="row">
+      ${m.actionable
+        .map(
+          (b) => `<div class="row">
         <a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.company)} — ${esc(b.title)}</a>
         ${badge(b.blocker.label, 'warn')}
-      </div>`).join('')}
+      </div>`,
+        )
+        .join('')}
     </div>`);
   }
 
   const essayCard = m.needsEssay.length
-    ? `${m.needsEssay.map((b) => `<div class="row col">
+    ? `${m.needsEssay
+        .map(
+          (b) => `<div class="row col">
         <div><a href="${esc(b.url)}" target="_blank" rel="noopener"><strong>${esc(b.company)}</strong> — ${esc(b.title)}</a></div>
         <div class="small muted">${esc(b.location)} · ${esc((b.timestamp || '').slice(0, 10))}</div>
         <div class="note">${esc(b.notes)}</div>
-      </div>`).join('')}`
+      </div>`,
+        )
+        .join('')}`
     : `<p class="muted">Nothing is waiting on a written answer right now.</p>`;
 
   const factCard = m.needsFact.length
-    ? m.needsFact.map((b) => `<div class="row col">
+    ? m.needsFact
+        .map(
+          (b) => `<div class="row col">
         <div><a href="${esc(b.url)}" target="_blank" rel="noopener"><strong>${esc(b.company)}</strong> — ${esc(b.title)}</a> ${badge(b.blocker.label, 'danger')}</div>
         <div class="small">${esc(b.blocker.action)}</div>
-      </div>`).join('')
+      </div>`,
+        )
+        .join('')
     : `<p class="muted">No outstanding fact or consent decisions.</p>`;
 
   const todayTable = m.todayRows.length
     ? `<table><thead><tr><th>Time</th><th>Company</th><th>Role</th><th>Location</th><th>Status</th><th>Detail</th></tr></thead><tbody>
-      ${m.todayRows.map((r) => `<tr>
+      ${m.todayRows
+        .map(
+          (r) => `<tr>
         <td class="mono small">${esc((r.timestamp || '').slice(11, 16))}</td>
         <td>${esc(r.company)}</td>
         <td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></td>
         <td class="small">${esc(r.location)}</td>
         <td>${badge(r.status, r.status === 'submitted' ? 'ok' : r.status === 'blocked' ? 'danger' : 'muted')}</td>
         <td class="small note">${esc((r.notes || '').slice(0, 160))}</td>
-      </tr>`).join('')}
+      </tr>`,
+        )
+        .join('')}
     </tbody></table>`
     : `<p class="muted">No activity recorded today yet.</p>`;
 
-  const poolSections = Object.entries(m.state?.pool ?? {}).map(([city, b]) => {
-    const all = [...(b.primary ?? []).map((r) => ({ ...r, bucket: 'primary' })), ...(b.backup ?? []).map((r) => ({ ...r, bucket: 'backup' }))];
-    if (!all.length) return `<h4>${esc(city)}</h4><p class="muted">Empty.</p>`;
-    return `<h4>${esc(city)}</h4>` + all.map((r) => `<div class="row col">
+  const poolSections = Object.entries(m.state?.pool ?? {})
+    .map(([city, b]) => {
+      const all = [
+        ...(b.primary ?? []).map((r) => ({ ...r, bucket: 'primary' })),
+        ...(b.backup ?? []).map((r) => ({ ...r, bucket: 'backup' })),
+      ];
+      if (!all.length) return `<h4>${esc(city)}</h4><p class="muted">Empty.</p>`;
+      return (
+        `<h4>${esc(city)}</h4>` +
+        all
+          .map(
+            (r) => `<div class="row col">
       <div>${badge(r.bucket, r.bucket === 'primary' ? 'ok' : 'muted')}
         <a href="${esc(r.url)}" target="_blank" rel="noopener"><strong>${esc(r.company)}</strong> — ${esc(r.title)}</a></div>
       <div class="small muted">${esc(r.headcountBand ?? '')} · ${r.isHouseholdName ? 'household name' : 'not a household name'} · ${r.thrivingSignals ?? 0} signal(s) · score ${r.score ?? '-'}</div>
       ${(r.uncertainties ?? []).map((u) => `<div class="small warn-text">! ${esc(u)}</div>`).join('')}
-    </div>`).join('');
-  }).join('');
+    </div>`,
+          )
+          .join('')
+      );
+    })
+    .join('');
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -375,7 +522,12 @@ button:hover{filter:brightness(1.08)}button:disabled{opacity:.55;cursor:not-allo
 
   <h2>Totals</h2>
   <div class="card">
-    <p>${Object.entries(m.statusCounts).map(([k, v]) => `${badge(k, k === 'submitted' ? 'ok' : k === 'blocked' ? 'danger' : 'muted')} ${v}`).join(' &nbsp; ')}</p>
+    <p>${Object.entries(m.statusCounts)
+      .map(
+        ([k, v]) =>
+          `${badge(k, k === 'submitted' ? 'ok' : k === 'blocked' ? 'danger' : 'muted')} ${v}`,
+      )
+      .join(' &nbsp; ')}</p>
     <p class="small muted">${m.ledgerTotal} ledger rows · ${m.blockedCompanies.length} companies permanently blocked by a form question ·
     <a href="http://127.0.0.1:3737" target="_blank" rel="noopener">JobSync</a> ·
     <a href="http://127.0.0.1:18789" target="_blank" rel="noopener">OpenClaw</a></p>

@@ -48,19 +48,33 @@ const candidatesPath = args.find((a) => !a.startsWith('--'));
 /** Minimal RFC4180-ish CSV reader; the ledger has quoted, comma-bearing notes. */
 export function parseCsv(text) {
   const rows = [];
-  let row = [], cur = '', q = false;
+  let row = [],
+    cur = '',
+    q = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (q) {
       if (c === '"') {
-        if (text[i + 1] === '"') { cur += '"'; i++; } else q = false;
+        if (text[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else q = false;
       } else cur += c;
     } else if (c === '"') q = true;
-    else if (c === ',') { row.push(cur); cur = ''; }
-    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
-    else if (c !== '\r') cur += c;
+    else if (c === ',') {
+      row.push(cur);
+      cur = '';
+    } else if (c === '\n') {
+      row.push(cur);
+      rows.push(row);
+      row = [];
+      cur = '';
+    } else if (c !== '\r') cur += c;
   }
-  if (cur || row.length) { row.push(cur); rows.push(row); }
+  if (cur || row.length) {
+    row.push(cur);
+    rows.push(row);
+  }
   return rows;
 }
 
@@ -68,12 +82,24 @@ export function parseCsv(text) {
 export function atsOf(url) {
   const u = String(url || '').toLowerCase();
   const map = [
-    ['ashby', 'ashbyhq'], ['greenhouse', 'greenhouse'], ['lever', 'lever.co'],
-    ['workday', 'myworkdayjobs'], ['rippling', 'rippling'], ['breezy', 'breezy'],
-    ['icims', 'icims'], ['workable', 'workable'], ['smartrecruiters', 'smartrecruiters'],
-    ['jobvite', 'jobvite'], ['taleo', 'taleo'], ['successfactors', 'successfactors'],
-    ['bamboohr', 'bamboohr'], ['applytojob', 'applytojob'], ['dayforce', 'dayforcehcm'],
-    ['avature', 'avature'], ['oracle', 'oraclecloud'], ['eightfold', 'eightfold'],
+    ['ashby', 'ashbyhq'],
+    ['greenhouse', 'greenhouse'],
+    ['lever', 'lever.co'],
+    ['workday', 'myworkdayjobs'],
+    ['rippling', 'rippling'],
+    ['breezy', 'breezy'],
+    ['icims', 'icims'],
+    ['workable', 'workable'],
+    ['smartrecruiters', 'smartrecruiters'],
+    ['jobvite', 'jobvite'],
+    ['taleo', 'taleo'],
+    ['successfactors', 'successfactors'],
+    ['bamboohr', 'bamboohr'],
+    ['applytojob', 'applytojob'],
+    ['dayforce', 'dayforcehcm'],
+    ['avature', 'avature'],
+    ['oracle', 'oraclecloud'],
+    ['eightfold', 'eightfold'],
   ];
   for (const [name, needle] of map) if (u.includes(needle)) return name;
   return u ? 'other/custom' : 'unknown';
@@ -82,7 +108,8 @@ export function atsOf(url) {
 /** Build {ats: {submitted, blocked, other, rate}} from ledger rows. */
 export function atsStats(rows) {
   const head = rows[0] ?? [];
-  const iu = head.indexOf('url'), is = head.indexOf('status');
+  const iu = head.indexOf('url'),
+    is = head.indexOf('status');
   const out = {};
   for (const r of rows.slice(1)) {
     if (!r || (!r[iu] && !r[is])) continue;
@@ -122,8 +149,13 @@ if (invokedDirectly) {
       const rate = v.rate === null ? '   -' : `${Math.round(v.rate * 100)}%`.padStart(4);
       const warn = v.rate === 0 ? '   <-- never produced a receipt' : '';
       console.log(
-        '  ' + name.padEnd(18) + String(v.submitted).padStart(6) +
-        String(v.blocked).padStart(9) + rate.padStart(7) + String(v.decided).padStart(4) + warn
+        '  ' +
+          name.padEnd(18) +
+          String(v.submitted).padStart(6) +
+          String(v.blocked).padStart(9) +
+          rate.padStart(7) +
+          String(v.decided).padStart(4) +
+          warn,
       );
     }
 
@@ -132,13 +164,16 @@ if (invokedDirectly) {
     for (const t of config.atsPreference?.tiers ?? []) {
       for (const p of t.platforms) tierOf[p] = t.tier;
     }
-    const surprises = ranked.filter(([n, v]) =>
-      tierOf[n] != null && ((tierOf[n] <= 2 && v.rate < 0.4) || (tierOf[n] >= 3 && v.rate > 0.6))
+    const surprises = ranked.filter(
+      ([n, v]) =>
+        tierOf[n] != null && ((tierOf[n] <= 2 && v.rate < 0.4) || (tierOf[n] >= 3 && v.rate > 0.6)),
     );
     if (surprises.length) {
       console.log('\n  CONFIG DISAGREES WITH THE LEDGER:');
       for (const [n, v] of surprises) {
-        console.log(`    ${n}: config tier ${tierOf[n]}, measured ${Math.round(v.rate * 100)}% over ${v.decided}`);
+        console.log(
+          `    ${n}: config tier ${tierOf[n]}, measured ${Math.round(v.rate * 100)}% over ${v.decided}`,
+        );
       }
     }
   }
@@ -168,5 +203,4 @@ if (invokedDirectly) {
       }
     }
   }
-
 }

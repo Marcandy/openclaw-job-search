@@ -53,7 +53,7 @@ test('an ATS posting that merely prints a recruiter address is not email-only', 
   // no form markers. It must NOT be rejected: the host is the form.
   const r = detectApplyMethod(
     'https://jobs.ashbyhq.com/acme/1234',
-    'Questions? Please send your resume questions to talent@acme.com mailto:talent@acme.com'
+    'Questions? Please send your resume questions to talent@acme.com mailto:talent@acme.com',
   );
   assert.equal(r.method, 'ats');
   assert.equal(r.ok, true);
@@ -65,7 +65,10 @@ test('a custom employer page with a real form is accepted', () => {
     Apply for this job. First name. Last name. Email. Upload resume.
     LinkedIn profile. Submit application.
   `.repeat(3);
-  const r = detectApplyMethod('https://www.arrivelogistics.com/job/software-engineer-back-end-3/', text);
+  const r = detectApplyMethod(
+    'https://www.arrivelogistics.com/job/software-engineer-back-end-3/',
+    text,
+  );
   assert.equal(r.ok, true);
   assert.equal(r.method, 'form');
 });

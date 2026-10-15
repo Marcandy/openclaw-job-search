@@ -1,7 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, rmSync, readdirSync, existsSync, mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from 'node:fs';
+import {
+  readFileSync,
+  rmSync,
+  readdirSync,
+  existsSync,
+  mkdtempSync,
+  writeFileSync,
+  unlinkSync,
+  rmdirSync,
+} from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -15,7 +24,9 @@ const LEADS_RE = /^leads-\d{4}-\d{2}-\d{2}\.json$/;
 
 /** Newest real sweep on disk, so these run against production-shaped data. */
 function latestLeadsFile() {
-  const files = readdirSync(root).filter((f) => LEADS_RE.test(f)).sort();
+  const files = readdirSync(root)
+    .filter((f) => LEADS_RE.test(f))
+    .sort();
   return files.length ? join(root, files[files.length - 1]) : null;
 }
 
@@ -24,19 +35,30 @@ function runTriage(extraArgs) {
   const leads = latestLeadsFile();
   if (!leads) return { skipped: true, out: null, doc: null };
   try {
-    execFileSync(process.execPath, [tool, leads, ...extraArgs, '--json', out], { encoding: 'utf8' });
+    execFileSync(process.execPath, [tool, leads, ...extraArgs, '--json', out], {
+      encoding: 'utf8',
+    });
     return { skipped: false, out, doc: JSON.parse(readText(out)), leads };
   } finally {
-    try { rmSync(out); } catch { /* best effort */ }
+    try {
+      rmSync(out);
+    } catch {
+      /* best effort */
+    }
   }
 }
 
 const normCompany = (n) =>
-  (n ?? '').toLowerCase()
+  (n ?? '')
+    .toLowerCase()
     .replace(/\b(inc|llc|ltd|corp|co|company)\b\.?/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-const normTitle = (t) => (t ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const normTitle = (t) =>
+  (t ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 
 /** Minimal quoted-CSV read, matching the shape leads-to-candidates.mjs uses. */
 function parseCsvRows(text) {
@@ -48,14 +70,26 @@ function parseCsvRows(text) {
     const c = text[i];
     if (inQuotes) {
       if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
       } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (c !== '\r') field += c;
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else if (c !== '\r') field += c;
   }
-  if (field || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   const header = rows.shift().map((h) => h.trim());
   return rows
     .filter((r) => r.length > 1)
@@ -170,22 +204,47 @@ test('2026-09-10: triage permits blocked retries while preserving submission and
   const ledger = join(dir, 'ledger.csv');
   const leads = join(dir, 'leads.json');
   const out = join(dir, 'out.json');
-  const names = ['Retry Candidate', 'Submitted Candidate', 'Reviewed Candidate', 'Structural Candidate'];
-  writeFileSync(ledger, 'company,title,url,status,notes\n' + [
-    'Retry Candidate,Software Engineer,https://example.org/retry,blocked,Required spoken language answer missing',
-    'Submitted Candidate,Software Engineer,https://example.org/sent,submitted,Application received',
-    'Reviewed Candidate,Software Engineer,https://example.org/review,reviewed,Prepared for review',
-    'Structural Candidate,Software Engineer,https://example.org/structural,blocked,Required residential street address',
-  ].join('\n') + '\n');
-  writeFileSync(leads, JSON.stringify({ cities: { chicago: { leads: names.map(company => ({
-    company, title: 'Software Engineer', location: 'Chicago, IL',
-  })) } } }));
+  const names = [
+    'Retry Candidate',
+    'Submitted Candidate',
+    'Reviewed Candidate',
+    'Structural Candidate',
+  ];
+  writeFileSync(
+    ledger,
+    'company,title,url,status,notes\n' +
+      [
+        'Retry Candidate,Software Engineer,https://example.org/retry,blocked,Required spoken language answer missing',
+        'Submitted Candidate,Software Engineer,https://example.org/sent,submitted,Application received',
+        'Reviewed Candidate,Software Engineer,https://example.org/review,reviewed,Prepared for review',
+        'Structural Candidate,Software Engineer,https://example.org/structural,blocked,Required residential street address',
+      ].join('\n') +
+      '\n',
+  );
+  writeFileSync(
+    leads,
+    JSON.stringify({
+      cities: {
+        chicago: {
+          leads: names.map((company) => ({
+            company,
+            title: 'Software Engineer',
+            location: 'Chicago, IL',
+          })),
+        },
+      },
+    }),
+  );
   try {
     execFileSync(process.execPath, [tool, leads, '--json', out], {
-      encoding: 'utf8', env: { ...process.env, CAMPAIGN_LEDGER_PATH: ledger },
+      encoding: 'utf8',
+      env: { ...process.env, CAMPAIGN_LEDGER_PATH: ledger },
     });
     const survivors = JSON.parse(readText(out)).cities.chicago.leads;
-    assert.deepEqual(survivors.map(row => row.company), ['Retry Candidate']);
+    assert.deepEqual(
+      survivors.map((row) => row.company),
+      ['Retry Candidate'],
+    );
     assert.equal(survivors[0].knownOfficialUrl, 'https://example.org/retry');
   } finally {
     for (const path of [ledger, leads, out]) if (existsSync(path)) unlinkSync(path);
