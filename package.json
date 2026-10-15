@@ -8,11 +8,16 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "doctor": "node tools/runtime-doctor.mjs"
+    "doctor": "node tools/runtime-doctor.mjs",
+    "format": "prettier --write \"**/*.mjs\"",
+    "format:check": "prettier --check \"**/*.mjs\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
     "ajv": "8.20.0",
     "playwright": "1.64.0"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
   }
 }

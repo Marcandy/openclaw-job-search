@@ -26,4 +26,5 @@ jobs:
         run: npx playwright install --with-deps chromium
       - if: runner.os == 'Windows'
         run: npx playwright install chromium
+      - run: npm run format:check
       - run: npm test

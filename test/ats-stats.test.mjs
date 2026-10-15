@@ -29,16 +29,18 @@ test('parseCsv keeps commas and quotes inside a quoted notes column', () => {
 });
 
 test('atsStats computes a conversion rate over decided rows only', () => {
-  const rows = parseCsv([
-    'url,status',
-    'https://jobs.ashbyhq.com/a/1,submitted',
-    'https://jobs.ashbyhq.com/a/2,submitted',
-    'https://jobs.ashbyhq.com/a/3,blocked',
-    'https://x.wd1.myworkdayjobs.com/j,blocked',
-    'https://x.wd1.myworkdayjobs.com/k,blocked',
-    'https://job-boards.greenhouse.io/g/jobs/1,discovered',
-    '',
-  ].join('\n'));
+  const rows = parseCsv(
+    [
+      'url,status',
+      'https://jobs.ashbyhq.com/a/1,submitted',
+      'https://jobs.ashbyhq.com/a/2,submitted',
+      'https://jobs.ashbyhq.com/a/3,blocked',
+      'https://x.wd1.myworkdayjobs.com/j,blocked',
+      'https://x.wd1.myworkdayjobs.com/k,blocked',
+      'https://job-boards.greenhouse.io/g/jobs/1,discovered',
+      '',
+    ].join('\n'),
+  );
   const s = atsStats(rows);
   assert.equal(s.ashby.submitted, 2);
   assert.equal(s.ashby.blocked, 1);

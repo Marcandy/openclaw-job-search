@@ -19,7 +19,15 @@ import { loadRuntime } from '../lib/runtime.mjs';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { checkTitle, checkRoleRelevance, checkLocation, normalizeCompany, canonicalizeUrl, buildBlockerIndex, checkKnownBlocker } from '../lib/role-filter.mjs';
+import {
+  checkTitle,
+  checkRoleRelevance,
+  checkLocation,
+  normalizeCompany,
+  canonicalizeUrl,
+  buildBlockerIndex,
+  checkKnownBlocker,
+} from '../lib/role-filter.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readText = (p) => readFileSync(p, 'utf8').replace(/^﻿/, '');
@@ -32,26 +40,48 @@ const { config } = loadRuntime();
  */
 function parseCsvRows(text) {
   const rows = [];
-  let row = [], field = '', inQuotes = false;
+  let row = [],
+    field = '',
+    inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
-      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
-      else field += c;
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
+      } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (c !== '\r') field += c;
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else if (c !== '\r') field += c;
   }
-  if (field || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   const header = rows.shift().map((h) => h.trim());
-  return rows.filter((r) => r.length > 1).map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
+  return rows
+    .filter((r) => r.length > 1)
+    .map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
 let blockerIndex = new Map();
 try {
-  blockerIndex = buildBlockerIndex(parseCsvRows(readText(process.env.CAMPAIGN_LEDGER_PATH ?? config.paths.ledgerCsv)), config);
-} catch { /* ledger unreadable: skip this check rather than fail triage */ }
+  blockerIndex = buildBlockerIndex(
+    parseCsvRows(readText(process.env.CAMPAIGN_LEDGER_PATH ?? config.paths.ledgerCsv)),
+    config,
+  );
+} catch {
+  /* ledger unreadable: skip this check rather than fail triage */
+}
 
 /**
  * Everything the ledger and prior sweeps already know.
@@ -73,15 +103,21 @@ try {
  * Neither index is allowed to invent anything: every URL here was previously
  * verified and written down by a run that saw the live posting.
  */
-const normTitle = (t) => (t ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const normTitle = (t) =>
+  (t ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 const pairKey = (company, title) => `${normalizeCompany(company)}::${normTitle(title)}`;
 
-const appliedIndex = new Map();   // company+title -> ledger status
-const resolvedIndex = new Map();  // company+title -> official URL seen before
+const appliedIndex = new Map(); // company+title -> ledger status
+const resolvedIndex = new Map(); // company+title -> official URL seen before
 let ledgerRows = [];
 try {
   ledgerRows = parseCsvRows(readText(process.env.CAMPAIGN_LEDGER_PATH ?? config.paths.ledgerCsv));
-} catch { /* ledger unreadable: indexes stay empty rather than failing triage */ }
+} catch {
+  /* ledger unreadable: indexes stay empty rather than failing triage */
+}
 
 for (const row of ledgerRows) {
   const key = pairKey(row.company, row.title);
@@ -98,7 +134,11 @@ try {
   const dir = join(here, '..');
   for (const f of readdirSync(dir).filter((f) => /^candidates-.*.json$/.test(f))) {
     let doc;
-    try { doc = JSON.parse(readText(join(dir, f))); } catch { continue; }
+    try {
+      doc = JSON.parse(readText(join(dir, f)));
+    } catch {
+      continue;
+    }
     const list = Array.isArray(doc) ? doc : (doc.candidates ?? doc.roles ?? []);
     for (const c of list) {
       const url = c.url ?? c.applyUrl;
@@ -107,7 +147,9 @@ try {
       if (!resolvedIndex.has(key)) resolvedIndex.set(key, url);
     }
   }
-} catch { /* prior pools optional */ }
+} catch {
+  /* prior pools optional */
+}
 
 /**
  * Household-name detection, mirroring checkCompanyProfile's two-pass match.
@@ -120,7 +162,13 @@ function householdNameHit(company) {
   return denyList.find((entry) => {
     const e = normalizeCompany(entry);
     if (!e) return false;
-    if (normalized === e || normalized.startsWith(`${e} `) || normalized.endsWith(` ${e}`) || normalized.includes(` ${e} `)) return true;
+    if (
+      normalized === e ||
+      normalized.startsWith(`${e} `) ||
+      normalized.endsWith(` ${e}`) ||
+      normalized.includes(` ${e} `)
+    )
+      return true;
     const ce = e.replace(/[^a-z0-9]/g, '');
     return ce.length >= 6 && compact.includes(ce);
   });
@@ -135,12 +183,16 @@ const jsonOut = args.includes('--json') ? args[args.indexOf('--json') + 1] : nul
  * `no city "out.json"` lookup and the written file contained an empty cities
  * object, silently, with exit 0.
  */
-const positional = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1] === '--json'));
+const positional = args.filter(
+  (a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1] === '--json'),
+);
 const leadsPath = positional[0];
 const cityArg = positional[1];
 
 if (!leadsPath) {
-  console.error('usage: node tools/leads-to-candidates.mjs <leads.json> [cityId] [--json out.json]');
+  console.error(
+    'usage: node tools/leads-to-candidates.mjs <leads.json> [cityId] [--json out.json]',
+  );
   process.exit(2);
 }
 
@@ -150,15 +202,55 @@ if (!leadsPath) {
  * company whose work is described.
  */
 const INTERMEDIARIES = [
-  'robert half', 'tata consultancy', 'tcs', 'infosys', 'wipro', 'cognizant',
-  'capgemini', 'accenture', 'ntt data', 'hcl', 'dxc', 'exl service', 'orion innovation',
-  'insight global', 'teksystems', 'randstad', 'adecco', 'kforce', 'apex systems',
-  'motion recruitment', 'jobot', 'cybercoders', 'dice', 'recruiting from scratch',
-  'shields group', 'stott and may', 'the phoenix group', 'sapphire partners',
-  'thedatajob', 'sweep360', 'upskill', 'staffing', 'consulting group', 'talent',
-  'search partners', 'recruiters', 'staffmark',
-  'gac solutions', 'gacsol', 'collabera', 'mastech', 'synechron', 'ust global',
-  'diverse lynx', 'photon', 'ltimindtree', 'virtusa', 'zensar', 'iris software',
+  'robert half',
+  'tata consultancy',
+  'tcs',
+  'infosys',
+  'wipro',
+  'cognizant',
+  'capgemini',
+  'accenture',
+  'ntt data',
+  'hcl',
+  'dxc',
+  'exl service',
+  'orion innovation',
+  'insight global',
+  'teksystems',
+  'randstad',
+  'adecco',
+  'kforce',
+  'apex systems',
+  'motion recruitment',
+  'jobot',
+  'cybercoders',
+  'dice',
+  'recruiting from scratch',
+  'shields group',
+  'stott and may',
+  'the phoenix group',
+  'sapphire partners',
+  'thedatajob',
+  'sweep360',
+  'upskill',
+  'staffing',
+  'consulting group',
+  'talent',
+  'search partners',
+  'recruiters',
+  'staffmark',
+  'gac solutions',
+  'gacsol',
+  'collabera',
+  'mastech',
+  'synechron',
+  'ust global',
+  'diverse lynx',
+  'photon',
+  'ltimindtree',
+  'virtusa',
+  'zensar',
+  'iris software',
 ];
 
 const report = JSON.parse(readText(leadsPath));
@@ -168,11 +260,18 @@ const out = { source: leadsPath, generatedAt: new Date().toISOString(), cities: 
 
 for (const cityId of cityIds) {
   const bucket = report.cities?.[cityId];
-  if (!bucket) { console.error(`no city "${cityId}" in ${leadsPath}`); continue; }
+  if (!bucket) {
+    console.error(`no city "${cityId}" in ${leadsPath}`);
+    continue;
+  }
   const city = config.cities.find((c) => c.id === cityId);
-  if (!city) { console.error(`unknown cityId "${cityId}" in config`); continue; }
+  if (!city) {
+    console.error(`unknown cityId "${cityId}" in config`);
+    continue;
+  }
 
-  const kept = [], dropped = [];
+  const kept = [],
+    dropped = [];
   for (const lead of bucket.leads ?? []) {
     const reasons = [];
 
@@ -205,7 +304,11 @@ for (const cityId of cityIds) {
     if (already) reasons.push(`alreadyInLedger: ${already}`);
 
     const knownUrl = resolvedIndex.get(pairKey(lead.company, lead.title)) ?? null;
-    (reasons.length ? dropped : kept).push({ ...lead, knownOfficialUrl: knownUrl, dropReasons: reasons });
+    (reasons.length ? dropped : kept).push({
+      ...lead,
+      knownOfficialUrl: knownUrl,
+      dropReasons: reasons,
+    });
   }
 
   out.cities[cityId] = {
@@ -214,7 +317,9 @@ for (const cityId of cityIds) {
     leadsIn: bucket.leads?.length ?? 0,
     survivors: kept.length,
     survivorsWithEmployerUrl: kept.filter((k) => k.employerUrl && k.employerUrl !== 'nan').length,
-    survivorsWithPreviouslyResolvedUrl: kept.filter((k) => !(k.employerUrl && k.employerUrl !== 'nan') && k.knownOfficialUrl).length,
+    survivorsWithPreviouslyResolvedUrl: kept.filter(
+      (k) => !(k.employerUrl && k.employerUrl !== 'nan') && k.knownOfficialUrl,
+    ).length,
     leads: kept,
   };
 
@@ -227,7 +332,10 @@ for (const cityId of cityIds) {
       console.log(`      ${k.title}   [${k.location}]`);
       const direct = k.employerUrl && k.employerUrl !== 'nan' ? k.employerUrl : null;
       if (direct) console.log(`      employer URL: ${direct}`);
-      else if (k.knownOfficialUrl) console.log(`      employer URL: ${k.knownOfficialUrl}   [resolved in a previous run — re-confirm it is still live]`);
+      else if (k.knownOfficialUrl)
+        console.log(
+          `      employer URL: ${k.knownOfficialUrl}   [resolved in a previous run — re-confirm it is still live]`,
+        );
       else console.log('      employer URL: NOT EXPOSED — must be found manually');
     }
   } else {
@@ -236,11 +344,18 @@ for (const cityId of cityIds) {
 
   // Summarize why things were dropped: that is the actionable diagnostic.
   const tally = {};
-  for (const d of dropped) for (const r of d.dropReasons) {
-    const key = r.split(':')[0];
-    tally[key] = (tally[key] ?? 0) + 1;
-  }
-  console.log('\ndrop reasons:', Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join('  '));
+  for (const d of dropped)
+    for (const r of d.dropReasons) {
+      const key = r.split(':')[0];
+      tally[key] = (tally[key] ?? 0) + 1;
+    }
+  console.log(
+    '\ndrop reasons:',
+    Object.entries(tally)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${k}=${v}`)
+      .join('  '),
+  );
 }
 
 if (jsonOut) {

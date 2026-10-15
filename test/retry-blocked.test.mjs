@@ -26,9 +26,16 @@ const root = join(here, '..');
 function runValidator(ledgerRows, candidate) {
   const dir = mkdtempSync(join(tmpdir(), 'retryblocked-'));
   const ledger = join(dir, 'ledger.csv');
-  writeFileSync(ledger, 'timestamp,company,title,location,url,source,status,resume_used,notes\n' + ledgerRows.join('\n') + '\n');
+  writeFileSync(
+    ledger,
+    'timestamp,company,title,location,url,source,status,resume_used,notes\n' +
+      ledgerRows.join('\n') +
+      '\n',
+  );
 
-  const cfg = JSON.parse(readFileSync(join(root, 'campaign.config.json'), 'utf8').replace(/^\uFEFF/, ''));
+  const cfg = JSON.parse(
+    readFileSync(join(root, 'campaign.config.json'), 'utf8').replace(/^\uFEFF/, ''),
+  );
   cfg.paths = { ...cfg.paths, ledgerCsv: ledger };
   const cfgPath = join(dir, 'campaign.config.json');
   writeFileSync(cfgPath, JSON.stringify(cfg));
@@ -40,7 +47,10 @@ function runValidator(ledgerRows, candidate) {
 
   try {
     const out = execFileSync(process.execPath, [scriptPath, candPath, '--json'], {
-      cwd: root, env: { ...process.env, CAMPAIGN_CONFIG_PATH: cfgPath, CAMPAIGN_RUNTIME_ROOT: dir }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: root,
+      env: { ...process.env, CAMPAIGN_CONFIG_PATH: cfgPath, CAMPAIGN_RUNTIME_ROOT: dir },
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     return JSON.parse(out.slice(out.indexOf('{')));
   } catch (err) {
@@ -48,12 +58,20 @@ function runValidator(ledgerRows, candidate) {
     // stderr, and concatenating them after the JSON corrupts the parse.
     const out2 = String(err.stdout || '');
     const i = out2.indexOf('{');
-    if (i >= 0) { try { return JSON.parse(out2.slice(i)); } catch (e) {
-      throw new Error('JSON parse failed: ' + e.message + ' :: ' + out2.slice(i, i + 200));
-    } }
-    throw new Error('validator produced no JSON. stdout=' + out2.slice(0, 200) + ' stderr=' + String(err.stderr || '').slice(0, 200));
+    if (i >= 0) {
+      try {
+        return JSON.parse(out2.slice(i));
+      } catch (e) {
+        throw new Error('JSON parse failed: ' + e.message + ' :: ' + out2.slice(i, i + 200));
+      }
+    }
+    throw new Error(
+      'validator produced no JSON. stdout=' +
+        out2.slice(0, 200) +
+        ' stderr=' +
+        String(err.stderr || '').slice(0, 200),
+    );
   } finally {
-
   }
 }
 
@@ -64,12 +82,22 @@ const CANDIDATE = {
   location: 'Chicago, IL',
   url: 'https://apply.workable.com/j/30152401A7',
   source: 'Workable official posting',
-  description: 'Build software for quantum systems using Python and TypeScript. 3+ years of experience.',
-  salaryMin: 145000, salaryMax: 170000,
+  description:
+    'Build software for quantum systems using Python and TypeScript. 3+ years of experience.',
+  salaryMin: 145000,
+  salaryMax: 170000,
   verifiedActiveOn: null,
   companyProfile: {
-    headcount: 234, isHouseholdName: false,
-    thrivingSignals: [{ type: 'recent_funding_round', detail: 'Raised a Series B in 2026', sourceUrl: 'https://example.com/a', asOf: '2026-05-01' }],
+    headcount: 234,
+    isHouseholdName: false,
+    thrivingSignals: [
+      {
+        type: 'recent_funding_round',
+        detail: 'Raised a Series B in 2026',
+        sourceUrl: 'https://example.com/a',
+        asOf: '2026-05-01',
+      },
+    ],
   },
   retryKnownBlocker: true,
 };
@@ -91,8 +119,11 @@ test('2026-09-09 regression: a BLOCKED row does not bar a retry', () => {
   const pool = runValidator([row], cand);
   const found = findRole(pool, 'Infleqtion');
   assert.ok(found, 'Infleqtion should appear somewhere in the pool output');
-  assert.notEqual(found.bucket, 'rejected',
-    'a blocked row must not suppress a retry once its blocking fact is answered');
+  assert.notEqual(
+    found.bucket,
+    'rejected',
+    'a blocked row must not suppress a retry once its blocking fact is answered',
+  );
 });
 
 test('a SUBMITTED row still bars a duplicate application', () => {
