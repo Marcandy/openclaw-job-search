@@ -12,7 +12,7 @@ const changed = [],
   boards = [];
 try {
   // Serial board reads avoid bursts and bound memory. No applicant files are read.
-  for (const board of registry.boards) {
+  for (const board of registry.boards.filter((b) => b.disabled !== true)) {
     try {
       const result = cacheBoard(store, board, await fetchBoard(board));
       changed.push(...result.changed);

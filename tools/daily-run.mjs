@@ -94,7 +94,8 @@ function reverify() {
 function samePosting(actual, d) {
   return (
     canonicalizeUrl(actual) === d.url ||
-    (d.source === 'ashby' && canonicalizeUrl(actual) === d.url + '/application')
+    (d.source === 'ashby' && canonicalizeUrl(actual) === d.url + '/application') ||
+    (d.source === 'lever' && canonicalizeUrl(actual) === d.url + '/apply')
   );
 }
 async function researchProfiles(companies) {
