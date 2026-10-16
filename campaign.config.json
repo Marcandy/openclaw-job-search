@@ -540,7 +540,17 @@
       "avionics",
       "robotics field service",
       "asic",
-      "rtl"
+      "rtl",
+      "developer relations",
+      "developer advocate",
+      "devrel",
+      "gtm",
+      "go-to-market",
+      "technical support",
+      "support engineer",
+      "sales engineer",
+      "solutions engineer",
+      "customer success"
     ],
     "note": "Matched case-insensitively on word boundaries against the exact posted title. Any match is a hard reject with no override."
   },
