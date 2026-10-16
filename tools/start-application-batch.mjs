@@ -33,23 +33,36 @@ try {
 }
 const id = randomUUID();
 const directory = join(runtime.root, 'batches', initial.day, id);
+let batchRuntime = runtime;
+if (args.includes('--allow-verified-open-older')) {
+  const config = readJson(runtime.configPath);
+  config.sourceFilter.allowVerifiedActiveOlderPostings = true;
+  const configPath = join(directory, 'config.json');
+  atomicJson(configPath, config);
+  batchRuntime = loadRuntime({
+    ...process.env,
+    CAMPAIGN_CONFIG_PATH: configPath,
+    CAMPAIGN_RUNTIME_ROOT: runtime.root,
+  });
+}
 const path = join(directory, 'policy.json');
 const policy = {
   ...readJson(standingPath),
   campaignDate: initial.day,
   dailyLimit: initial.occupied + count,
+  configDigest: batchRuntime.configDigest,
   approvedAt: new Date().toISOString(),
   approvedBy: 'direct_user_instruction',
   instruction,
   batch: { id, maxAdditionalDeliveries: count, initial, standingPolicyHash: standing.hash },
 };
 atomicJson(path, policy);
-verifyStandingPolicy(runtime, path);
+verifyStandingPolicy(batchRuntime, path);
 const argv = [
   realpathSync(process.execPath),
   join(runtime.sourceRoot, 'tools', 'daily-run.mjs'),
   '--config',
-  runtime.configPath,
+  batchRuntime.configPath,
   '--runtime',
   runtime.root,
   '--policy',
