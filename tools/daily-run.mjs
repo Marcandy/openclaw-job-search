@@ -21,6 +21,7 @@ import { answerQuestions } from '../lib/facts-and-blockers.mjs';
 import {
   verifyStandingPolicy,
   dailyUsage,
+  belowCompanyCap,
   beginDailySubmit,
   mapRoutineQuestions,
 } from '../lib/daily-policy.mjs';
@@ -266,9 +267,16 @@ try {
         ? readJson(join(runtime.root, 'blockers.json'))
         : [];
     let researchBatches = 0;
+    const companyCap = runtime.config.autonomous?.maxApplicationsPerCompanyPerDay ?? 2;
     async function candidates() {
+      const admitCompany = belowCompanyCap(store, policy.timezone, companyCap);
       return discovered.candidates
-        .filter((r) => policy.allowedCityIds.includes(r.cityId) && !store.get(applicationId(r.url)))
+        .filter(
+          (r) =>
+            policy.allowedCityIds.includes(r.cityId) &&
+            !store.get(applicationId(r.url)) &&
+            admitCompany(r),
+        )
         .map((r) => {
           const entry = profiles.get(normalizeCompany(r.company));
           if (!entry) return null;

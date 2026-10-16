@@ -14,6 +14,7 @@ if (!cli) throw Error('Supply the installed OpenClaw CLI entrypoint with --cli')
 const name = 'job-search-daily',
   schedule = '30 12,16 * * *';
 const policyPath = join(runtime.root, 'autonomous-policy.json');
+const displayName = `Daily job applications (${readJson(policyPath).dailyLimit} per day, all approved locations)`;
 const argv = [
   realpathSync(process.execPath),
   join(runtime.sourceRoot, 'tools', 'daily-run.mjs'),
@@ -72,6 +73,7 @@ if (!args.includes('--apply')) {
       {
         action: 'preview',
         replaces: matches.map((j) => j.id),
+        displayName,
         argv,
         schedule,
         timezone: runtime.config.timezone,
@@ -87,10 +89,23 @@ atomicJson(join(runtime.root, 'autonomous-schedule-before.json'), before);
 const changed = matches.length
   ? call(['cron', 'edit', matches[0].id, ...flags, '--enable'])
   : call(['cron', 'add', ...flags, '--json']);
+// `cron edit` cannot set the display name, so a reused legacy job would keep
+// its old campaign label. Patch it through the gateway instead.
+const installed = call(['cron', 'list', '--all', '--json']).jobs.filter((j) => j.name === name);
+if (installed.length === 1 && installed[0].displayName !== displayName)
+  call([
+    'gateway',
+    'call',
+    'cron.update',
+    '--json',
+    '--params',
+    JSON.stringify({ id: installed[0].id, patch: { displayName } }),
+  ]);
 const after = call(['cron', 'list', '--all', '--json']);
 const jobs = after.jobs.filter((j) => j.name === name);
 if (
   jobs.length !== 1 ||
+  jobs[0].displayName !== displayName ||
   !jobs[0].enabled ||
   jobs[0].schedule?.expr !== schedule ||
   jobs[0].schedule?.tz !== runtime.config.timezone ||

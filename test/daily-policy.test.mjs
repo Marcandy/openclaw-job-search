@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventStore } from '../lib/event-store.mjs';
-import { dailyUsage, beginDailySubmit, mapRoutineQuestions } from '../lib/daily-policy.mjs';
+import {
+  dailyUsage,
+  companyUsage,
+  belowCompanyCap,
+  beginDailySubmit,
+  mapRoutineQuestions,
+} from '../lib/daily-policy.mjs';
 import { postedSalary, usRemote, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 const now = new Date('2026-10-15T16:00:00Z'),
   policy = {
@@ -16,6 +22,42 @@ const role = (n) => ({
   title: 'Software Engineer',
   location: 'US remote',
   source: 'ashby',
+});
+
+test('company usage counts today’s occupied slots per employer, not blocks or other days', () => {
+  const s = new EventStore(':memory:');
+  try {
+    const at = (n, company, timestamp, status = 'submitted') => ({
+      ...role(n),
+      company,
+      timestamp,
+      status,
+    });
+    s.importLedger([
+      at(0, 'WorkOS', now.toISOString()),
+      at(1, 'workos, Inc.', now.toISOString()),
+      at(2, 'WorkOS', '2026-10-14T16:00:00Z'),
+      at(3, 'WorkOS', now.toISOString(), 'blocked'),
+      at(4, 'Baseten', now.toISOString()),
+    ]);
+    const run = s.startRun();
+    const held = s.claim(run, { ...role(5), company: 'Baseten' }, 'manifest-held');
+    s.transition(held, run, 'filling');
+    beginDailySubmit(s, held, run, policy, now);
+    s.transition(held, run, 'uncertain', { reason: 'Timeout' });
+    s.db.prepare('UPDATE applications SET updated_at=? WHERE id=?').run(now.toISOString(), held);
+    assert.deepEqual(Object.fromEntries(companyUsage(s, policy.timezone, now)), {
+      workos: 2,
+      baseten: 2,
+    });
+    assert.equal(dailyUsage(s, policy.timezone, now).occupied, 4);
+    const admit = belowCompanyCap(s, policy.timezone, 2, now);
+    assert.equal(admit({ company: 'WorkOS' }), false);
+    assert.equal(admit({ company: 'Runpod' }), true);
+    assert.equal(belowCompanyCap(s, policy.timezone, 3, now)({ company: 'Baseten' }), true);
+  } finally {
+    s.close();
+  }
 });
 
 test('verified pre-delivery failure releases capacity for a different successful application', () => {

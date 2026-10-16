@@ -147,6 +147,33 @@ test('banned tokens do not false-positive inside larger words', () => {
   }
 });
 
+test('2026-10-16: relations, go-to-market, support and sales titles are rejected', () => {
+  // Each passed the engineering-token gate because it contains "engineer" or
+  // "developer", yet none is the full-stack, backend or applied-AI work targeted.
+  for (const title of [
+    'Developer Relations', // WorkOS
+    'GTM Engineer', // WorkOS
+    'GTM AI Engineer - Data & Attribution', // Oneleet
+    'Technical Support Engineer', // Composio
+    'Developer Advocate',
+    'Go-To-Market Engineer',
+    'Solutions Engineer',
+    'Sales Engineer',
+    'Customer Success Engineer',
+  ]) {
+    assert.equal(checkTitle(title, config).ok, false, `${title} must be hard-rejected`);
+  }
+  for (const title of [
+    'Design Engineer', // frontend work with design ownership remains eligible
+    'Developer & Agent Experience Engineer',
+    'Software Engineer, Support Tools',
+    'Backend Engineer, Sales Platform',
+  ]) {
+    const r = checkTitle(title, config);
+    assert.equal(r.ok, true, `${title} should pass but reported ${r.bannedTokensFound}`);
+  }
+});
+
 test('empty title is rejected', () => {
   assert.equal(checkTitle('', config).ok, false);
   assert.equal(checkTitle(null, config).ok, false);
