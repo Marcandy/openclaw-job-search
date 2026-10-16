@@ -161,7 +161,7 @@ async function researchProfiles(companies) {
   for (const item of parsed.companies ?? []) {
     if (!allowed.has(normalizeCompany(item.company))) continue;
     try {
-      accepted.push(await verifyResearchedProfile(item));
+      accepted.push(await verifyResearchedProfile(item, { store }));
     } catch (e) {
       report.results.push({ company: item.company, status: 'evidence_skipped', reason: e.message });
     }
