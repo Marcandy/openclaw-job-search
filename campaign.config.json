@@ -528,7 +528,19 @@
       "architect",
       "head of",
       "distinguished",
-      "fellow"
+      "fellow",
+      "mechanical",
+      "electrical",
+      "manufacturing",
+      "hardware",
+      "firmware",
+      "civil",
+      "structural",
+      "transmission",
+      "avionics",
+      "robotics field service",
+      "asic",
+      "rtl"
     ],
     "note": "Matched case-insensitively on word boundaries against the exact posted title. Any match is a hard reject with no override."
   },
