@@ -1281,5 +1281,10 @@
         "maxAcceptedMinimumYears": 2
       }
     }
+  },
+  "autonomous": {
+    "headless": false,
+    "dailyLimit": 12,
+    "maxApplicationsPerCompanyPerDay": 2
   }
 }
