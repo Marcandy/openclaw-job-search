@@ -35,6 +35,7 @@ test('company cache requires a current dated excerpt that the public source actu
           { company: 'Acme', thrivingSignals: [signal] },
           {
             now,
+            sourceMaxAgeDays: 0,
             fetcher: async () => ({
               ok: true,
               text: async () => '<p>Nothing supports this claim</p>',

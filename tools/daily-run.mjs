@@ -9,6 +9,7 @@ import {
   normalizeCompany,
   canonicalizeUrl,
   buildBlockerIndex,
+  householdNameMatch,
 } from '../lib/role-filter.mjs';
 import { routeResume } from '../lib/resume-routing.mjs';
 import {
@@ -94,7 +95,8 @@ function reverify() {
 function samePosting(actual, d) {
   return (
     canonicalizeUrl(actual) === d.url ||
-    (d.source === 'ashby' && canonicalizeUrl(actual) === d.url + '/application')
+    (d.source === 'ashby' && canonicalizeUrl(actual) === d.url + '/application') ||
+    (d.source === 'lever' && canonicalizeUrl(actual) === d.url + '/apply')
   );
 }
 async function researchProfiles(companies) {
@@ -160,7 +162,7 @@ async function researchProfiles(companies) {
   for (const item of parsed.companies ?? []) {
     if (!allowed.has(normalizeCompany(item.company))) continue;
     try {
-      accepted.push(await verifyResearchedProfile(item));
+      accepted.push(await verifyResearchedProfile(item, { store }));
     } catch (e) {
       report.results.push({ company: item.company, status: 'evidence_skipped', reason: e.message });
     }
@@ -319,6 +321,7 @@ try {
             .filter(
               (r) =>
                 policy.allowedCityIds.includes(r.cityId) &&
+                !householdNameMatch(r.company, runtime.config) &&
                 !store.get(applicationId(r.url)) &&
                 !profiles.has(normalizeCompany(r.company)) &&
                 !recent.has(normalizeCompany(r.company)),
