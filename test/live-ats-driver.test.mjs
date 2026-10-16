@@ -7,8 +7,51 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
 
-for (const sendRequest of [false, true]) {
-  test(`post-click CAPTCHA ${sendRequest ? 'holds a possible cross-origin delivery' : 'releases a known non-delivery for replacement'}`, async () => {
+for (const scenario of [
+  { name: 'releases a known non-delivery for replacement', writes: [], held: false },
+  {
+    name: 'holds a possible cross-origin delivery',
+    writes: ['https://submission.example.org/apply'],
+    held: true,
+  },
+  {
+    name: 'releases Google CAPTCHA transport without solving it',
+    writes: ['https://www.google.com/recaptcha/api2/reload'],
+    held: false,
+  },
+  {
+    name: 'releases a delayed CAPTCHA inside an iframe',
+    writes: ['https://www.google.com/recaptcha/api2/reload'],
+    held: false,
+    delayedFrame: true,
+  },
+  {
+    name: 'keeps an unconfirmed delivery held without a visible challenge',
+    writes: ['https://www.google.com/recaptcha/api2/reload'],
+    held: true,
+    showChallenge: false,
+    writeObserved: false,
+  },
+  {
+    name: 'holds an application write even alongside CAPTCHA traffic',
+    writes: [
+      'https://www.google.com/recaptcha/api2/reload',
+      'https://submission.example.org/apply',
+    ],
+    held: true,
+  },
+  {
+    name: 'holds writes to a lookalike CAPTCHA host',
+    writes: ['https://www.google.com.example.org/recaptcha/api2/reload'],
+    held: true,
+  },
+  {
+    name: 'holds non-CAPTCHA writes to Google',
+    writes: ['https://www.google.com/application'],
+    held: true,
+  },
+]) {
+  test(`post-click CAPTCHA ${scenario.name}`, async () => {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const dir = mkdtempSync(join(tmpdir(), 'daily-captcha-'));
@@ -33,8 +76,8 @@ for (const sendRequest of [false, true]) {
         document.querySelector('#_systemfield_resume').onchange = e => document.querySelector('#filename').textContent = e.target.files[0].name;
         document.querySelector('form').onsubmit = e => {
           e.preventDefault();
-          ${sendRequest ? "fetch('https://submission.example.org/apply', { method: 'POST', mode: 'no-cors', body: 'application' });" : ''}
-          document.body.insertAdjacentHTML('beforeend', '<p>Verify you are human</p>');
+          ${scenario.writes.map((url) => `fetch('${url}', { method: 'POST', mode: 'no-cors', body: 'application' });`).join('\n')}
+          ${scenario.showChallenge === false ? '' : scenario.delayedFrame ? `setTimeout(() => { const frame = document.createElement('iframe'); frame.srcdoc = '<p>Select all images with a bus</p>'; document.body.appendChild(frame); }, 100);` : `document.body.insertAdjacentHTML('beforeend', '<p>Verify you are human</p>');`}
         };
         </script>`,
       });
@@ -49,9 +92,14 @@ for (const sendRequest of [false, true]) {
       await driver.preflight(destination);
       await driver.fill(destination, { name: 'Example Applicant' }, bytes);
       await assert.rejects(driver.submit(destination), (error) => {
-        assert.match(error.message, /Visible challenge/);
-        assert.equal(Boolean(error.rejectedBeforeDelivery), !sendRequest);
-        assert.equal(error.evidence.writeRequestObserved, sendRequest);
+        assert.match(
+          error.message,
+          scenario.showChallenge === false || scenario.delayedFrame
+            ? /Timeout/
+            : /Visible challenge/,
+        );
+        assert.equal(Boolean(error.rejectedBeforeDelivery), !scenario.held);
+        assert.equal(error.evidence.writeRequestObserved, scenario.writeObserved ?? scenario.held);
         return true;
       });
     } finally {
