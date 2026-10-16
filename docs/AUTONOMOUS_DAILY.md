@@ -29,6 +29,8 @@ Private deployment files under the runtime root:
 
 Run `node tools/daily-run.mjs --config <private-config> --runtime <runtime>` for the actual controller. `--preflight-only --max-preflight 2 --no-research` checks public forms without entering applicant data or submitting. The application controller never imports its exported CSV; SQLite remains authoritative.
 
+For an explicit additional batch, `node tools/start-application-batch.mjs --count 15 --cli <openclaw.mjs> --instruction-file <user-request.txt>` creates a separate private, date-limited grant and a one-time native OpenClaw command job. It records the initial occupied slots and caps additional possible deliveries at the requested count. The standing twelve-per-day policy remains unchanged. A dated grant fails after its New York campaign date. Company research excludes employers already barred by the household-name rule before spending model tokens.
+
 Use `tools/install-daily-schedule.mjs --cli <installed-openclaw.mjs>` to preview replacing the legacy research schedule; add `--apply` to install and verify readback. Backups of the old schedule remain private. Disable the OpenClaw job or set the private policy's `enabled` to false to stop future submissions. Code, config, resume or confirmed-fact changes require deliberate policy renewal; a changed hash stops execution.
 
 The Windows gateway must be available on this computer. A logon trigger and a wake/start check before each run can restore it after sleep or restart. A powered-off or signed-out computer cannot run an interactive browser. If eligible roles or supported forms run short, the report records the actual shortfall; it never invents applications to reach twelve.

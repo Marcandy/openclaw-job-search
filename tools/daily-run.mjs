@@ -9,6 +9,7 @@ import {
   normalizeCompany,
   canonicalizeUrl,
   buildBlockerIndex,
+  householdNameMatch,
 } from '../lib/role-filter.mjs';
 import { routeResume } from '../lib/resume-routing.mjs';
 import {
@@ -320,6 +321,7 @@ try {
             .filter(
               (r) =>
                 policy.allowedCityIds.includes(r.cityId) &&
+                !householdNameMatch(r.company, runtime.config) &&
                 !store.get(applicationId(r.url)) &&
                 !profiles.has(normalizeCompany(r.company)) &&
                 !recent.has(normalizeCompany(r.company)),
