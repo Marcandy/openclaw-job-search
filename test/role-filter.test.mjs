@@ -1500,7 +1500,7 @@ test('a clean role evaluates to primary with a positive score', () => {
   assert.ok(r.score > 0);
 });
 
-test('buildPool honors the 3/2/5/2/1x7 quota and reports shortfalls', () => {
+test('buildPool honors the 3/2/5/2/1x8 quota and reports shortfalls', () => {
   const roles = [];
   // Newark over-supplied, San Jose short, Chicago exactly at its raised quota,
   // Atlanta and the five 2026-10-09 markets entirely unsupplied.
@@ -1522,8 +1522,9 @@ test('buildPool honors the 3/2/5/2/1x7 quota and reports shortfalls', () => {
     }
   }
   const pool = buildPool(roles, config);
-  assert.equal(pool.totalQuota, 19, 'campaign quota is 3 + 2 + 5 + 2 + 1x7');
+  assert.equal(pool.totalQuota, 20, 'campaign quota is 3 + 2 + 5 + 2 + 1x8');
   assert.ok(pool.quotaShortfalls.some((s) => s.city === 'St. Louis, MO' && s.shortfall === 1));
+  assert.ok(pool.quotaShortfalls.some((s) => s.city === 'Philadelphia, PA' && s.shortfall === 1));
   assert.equal(pool.byCity.newark.primary.length, 3, 'the corridor caps at 3 primaries');
   assert.equal(pool.byCity.newark.backup.length, 1, 'the 4th corridor role overflows into backup');
   assert.equal(pool.byCity['san-jose'].primary.length, 1);

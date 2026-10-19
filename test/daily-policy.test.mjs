@@ -7,6 +7,7 @@ import {
   belowCompanyCap,
   beginDailySubmit,
   mapRoutineQuestions,
+  homeStateListAnswer,
 } from '../lib/daily-policy.mjs';
 import { postedSalary, usRemote, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 const now = new Date('2026-10-15T16:00:00Z'),
@@ -332,4 +333,165 @@ test('company research must corroborate both headcount bounds and a dated signal
     ),
     /interval/,
   );
+});
+test('routine wording variants map only to confirmed facts and exact offered options', () => {
+  const field = (value) => ({
+    value,
+    source: 'confirmed',
+    confirmedAt: now.toISOString(),
+    uses: ['application'],
+  });
+  const f = {
+    version: 'test',
+    fields: {
+      firstName: field('Example'),
+      lastName: field('Applicant'),
+      homeCountry: field('United States'),
+      homeState: field('NY'),
+      currentCompany: field('Acme Labs'),
+      securityClearance: field('None'),
+    },
+  };
+  const yesNo = { type: 'select', options: ['Yes', 'No'] };
+  const q = (key, label, extras = {}) => ({ key, label, required: true, type: 'text', ...extras });
+  const plan = mapRoutineQuestions(
+    [
+      q('first', 'Legal First Name'),
+      q('last', 'Legal Last Name'),
+      q('company', 'What is your most recent company?'),
+      q('hear', 'Where did you first hear about this role?', {
+        type: 'select',
+        options: ['LinkedIn', 'Careers Page', 'Referral'],
+      }),
+      q(
+        'us',
+        'Do you live in the U.S. or plan to live in the U.S. by the time you start working?',
+        yesNo,
+      ),
+      q('americas', 'Are you located in either the Americas or Europe?', yesNo),
+      q(
+        'states',
+        'Do you live in one of the following states? Alabama, Alaska, Delaware, Kansas, Maine, Mississippi, Montana, Nebraska, New Mexico, North Dakota, South Dakota, West Virginia, or Wyoming.',
+        yesNo,
+      ),
+      q('clearanceStatus', 'What is your current U.S. security clearance status?', {
+        type: 'select',
+        options: ['None', 'Secret', 'Top Secret'],
+      }),
+      q('clearanceHeld', 'Do you currently hold an active security clearance?', yesNo),
+      q('countries', 'Are you currently based in any of these countries?', {
+        type: 'select',
+        options: ['United States', 'Canada'],
+      }),
+      // Still blocked: no confirmed title, an unoffered clearance option, and consent.
+      q('title', 'What is your most recent job title?'),
+      q('clearanceOdd', 'What is your current security clearance status?', {
+        type: 'select',
+        options: ['No clearance', 'Secret'],
+      }),
+      q('privacy', 'I acknowledge the Job Applicant Privacy Notice', { type: 'checkbox' }),
+    ],
+    role(1),
+    f,
+    policy,
+    now,
+  );
+  const value = (k) => plan.facts.fields[plan.answers[k]]?.value;
+  assert.equal(value('first'), 'Example');
+  assert.equal(value('last'), 'Applicant');
+  assert.equal(value('company'), 'Acme Labs');
+  assert.equal(value('hear'), 'Careers Page');
+  assert.equal(value('us'), 'Yes');
+  assert.equal(value('americas'), 'Yes');
+  assert.equal(value('states'), 'No');
+  assert.equal(value('clearanceStatus'), 'None');
+  assert.equal(value('clearanceHeld'), 'No');
+  assert.equal(value('countries'), 'United States');
+  assert.deepEqual(
+    plan.blocked.map((b) => b.key),
+    ['title', 'clearanceOdd', 'privacy'],
+  );
+});
+
+test('home state list answers need a real state list and a Yes/No choice', () => {
+  const label = 'Do you live in one of the following states? New York, New Jersey, Ohio';
+  assert.equal(homeStateListAnswer(label, 'NY', ['Yes', 'No']), 'Yes');
+  assert.equal(homeStateListAnswer(label, 'PA', ['Yes', 'No']), 'No');
+  assert.equal(homeStateListAnswer(label, 'NY', ['New York', 'Other']), null);
+  assert.equal(
+    homeStateListAnswer('Do you live in one of the following states?', 'NY', ['Yes', 'No']),
+    null,
+  );
+  assert.equal(
+    homeStateListAnswer('Do you reside in these states: West Virginia, Ohio, Utah', 'VA', [
+      'Yes',
+      'No',
+    ]),
+    'No',
+  );
+  assert.equal(
+    homeStateListAnswer('Do you reside in these states: Virginia, West Virginia, Utah', 'VA', [
+      'Yes',
+      'No',
+    ]),
+    'Yes',
+  );
+  // A U.S.-states question is never answered by the plain US-residence rule.
+  const plan = mapRoutineQuestions(
+    [
+      {
+        key: 's',
+        label: 'Do you live in one of the following U.S. states?',
+        required: true,
+        type: 'select',
+        options: ['Yes', 'No'],
+      },
+    ],
+    role(1),
+    {
+      version: 'test',
+      fields: {
+        homeCountry: {
+          value: 'United States',
+          source: 'c',
+          confirmedAt: now.toISOString(),
+          uses: ['application'],
+        },
+      },
+    },
+    policy,
+    now,
+  );
+  assert.equal(plan.blocked.length, 1);
+});
+
+test('most recent job title maps only to a confirmed title fact', () => {
+  const titleQuestion = [
+    { key: 't', label: 'What is your most recent job title?', required: true, type: 'text' },
+    { key: 'c', label: 'Current Job Title', required: true, type: 'text' },
+  ];
+  const field = (value) => ({
+    value,
+    source: 'confirmed',
+    confirmedAt: now.toISOString(),
+    uses: ['application'],
+  });
+  const without = mapRoutineQuestions(
+    titleQuestion,
+    role(1),
+    { version: 't', fields: {} },
+    policy,
+    now,
+  );
+  assert.equal(without.blocked.length, 2);
+  const withTitle = mapRoutineQuestions(
+    titleQuestion,
+    role(1),
+    { version: 't', fields: { currentTitle: field('Software Consultant') } },
+    policy,
+    now,
+  );
+  assert.equal(withTitle.blocked.length, 0);
+  assert.equal(withTitle.answers.t, 'currentTitle');
+  assert.equal(withTitle.answers.c, 'currentTitle');
 });

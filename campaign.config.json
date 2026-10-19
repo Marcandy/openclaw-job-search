@@ -1,10 +1,15 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 9,
+  "version": 10,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
-  "description": "Eleven-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, St. Louis MO, and Wilmington DE. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
+  "description": "Twelve-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, St. Louis MO, Wilmington DE, and Philadelphia PA. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
   "versionHistory": [
+    {
+      "version": 10,
+      "date": "2026-10-19",
+      "change": "Added Philadelphia, Pennsylvania by user instruction; city only. Location aliases now match on word boundaries, and Washington, DC accepts District of Columbia spellings."
+    },
     {
       "version": 9,
       "date": "2026-10-15",
@@ -105,6 +110,40 @@
         ]
       },
       "notes": "Added 2026-10-15. City proper in Missouri only; bare city names and metro/county locations require clarification rather than silently accepting Illinois or nearby municipalities. No discovery sweep has measured this market yet."
+    },
+    {
+      "id": "philadelphia",
+      "label": "Philadelphia, PA",
+      "state": "PA",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": [
+        "Philadelphia, PA", "Philadelphia PA", "Philadelphia, Pennsylvania", "Philadelphia Pennsylvania",
+        "US-PA-Philadelphia", "PA - Philadelphia", "Philadelphia, PA, USA"
+      ],
+      "excludedLocationPatterns": [
+        "new philadelphia",
+        "philadelphia, ms", "philadelphia, mississippi",
+        "philadelphia, ny", "philadelphia, new york",
+        "philadelphia, tn", "philadelphia, tennessee",
+        "greater philadelphia", "philadelphia metro"
+      ],
+      "excludedLocationNote": "New Philadelphia (OH and PA) and Philadelphia in Mississippi, New York and Tennessee are separate municipalities. Metro labels cover the Pennsylvania and New Jersey suburbs, not the city.",
+      "commuteAliases": [
+        "King of Prussia, PA", "Conshohocken, PA", "Wayne, PA", "Malvern, PA",
+        "Bala Cynwyd, PA", "Camden, NJ", "Cherry Hill, NJ"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Starting assumption follows the newer markets; supply must be measured before adjusting the quota or geography.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ]
+      },
+      "notes": "Added 2026-10-19 by user instruction. City proper in Pennsylvania only; a bare city name, metro label or suburb is not accepted. No discovery sweep has measured this market yet."
     },
     {
       "id": "newark",
@@ -391,6 +430,9 @@
         "Washington, DC (Hybrid)",
         "US-DC-Washington",
         "Washington, DC, USA",
+        "Washington, District of Columbia",
+        "Washington District of Columbia",
+        "District of Columbia",
         "DMV"
       ],
       "excludedLocationPatterns": [
