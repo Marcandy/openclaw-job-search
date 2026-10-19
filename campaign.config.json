@@ -425,6 +425,9 @@
         "Washington, DC (Hybrid)",
         "US-DC-Washington",
         "Washington, DC, USA",
+        "Washington, District of Columbia",
+        "Washington District of Columbia",
+        "District of Columbia",
         "DMV"
       ],
       "excludedLocationPatterns": [
