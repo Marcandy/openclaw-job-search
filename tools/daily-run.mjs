@@ -28,6 +28,7 @@ import {
 import { discoverDaily, profileCurrent, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
 import { runReplacementQueue } from '../lib/replacement-queue.mjs';
+import { rankFactGaps } from '../lib/run-insights.mjs';
 
 const args = process.argv.slice(2),
   option = (k) => {
@@ -408,7 +409,9 @@ try {
             throw Error(live.blockedReason ?? 'Official posting changed');
           const plan = mapRoutineQuestions(live.questions, role, facts, policy);
           if (plan.blocked.length)
-            throw Error('Required fields blocked: ' + JSON.stringify(plan.blocked));
+            throw Object.assign(Error('Required fields blocked: ' + JSON.stringify(plan.blocked)), {
+              blocked: plan.blocked,
+            });
           if (args.includes('--preflight-only')) {
             report.results.push({
               company: role.company,
@@ -507,6 +510,7 @@ try {
             url: role.url,
             status: id ? store.get(id).state : 'skipped',
             reason: e.message,
+            blocked: e.blocked,
             evidence: e.evidence,
           });
         } finally {
@@ -518,6 +522,8 @@ try {
     });
     report.stopReason = queue.stopReason;
     report.attempted = queue.attempted;
+    // Which missing answers would have unlocked the most skipped roles.
+    report.factGaps = rankFactGaps(report.results);
     report.researchBatches = researchBatches;
     report.final = dailyUsage(store, policy.timezone);
     report.status = args.includes('--preflight-only')
