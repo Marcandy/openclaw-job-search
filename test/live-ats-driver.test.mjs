@@ -256,3 +256,12 @@ test('Greenhouse dropdown choices are read by opening the menu, without choosing
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('a home-city answer matches the approved location query by leading words', async () => {
+  const { sameCity } = await import('../lib/live-ats-driver.mjs');
+  assert.equal(sameCity('New York, NY', 'New York'), true);
+  assert.equal(sameCity('New York City, New York, United States', 'New York'), true);
+  assert.equal(sameCity('Newark, NJ', 'New York'), false);
+  assert.equal(sameCity('York, PA', 'New York'), false);
+  assert.equal(sameCity('New York', ''), false);
+});
