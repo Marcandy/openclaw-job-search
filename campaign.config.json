@@ -107,6 +107,40 @@
       "notes": "Added 2026-10-15. City proper in Missouri only; bare city names and metro/county locations require clarification rather than silently accepting Illinois or nearby municipalities. No discovery sweep has measured this market yet."
     },
     {
+      "id": "philadelphia",
+      "label": "Philadelphia, PA",
+      "state": "PA",
+      "dailyQuota": 1,
+      "minBackups": 2,
+      "acceptedLocationAliases": [
+        "Philadelphia, PA", "Philadelphia PA", "Philadelphia, Pennsylvania", "Philadelphia Pennsylvania",
+        "US-PA-Philadelphia", "PA - Philadelphia", "Philadelphia, PA, USA"
+      ],
+      "excludedLocationPatterns": [
+        "new philadelphia",
+        "philadelphia, ms", "philadelphia, mississippi",
+        "philadelphia, ny", "philadelphia, new york",
+        "philadelphia, tn", "philadelphia, tennessee",
+        "greater philadelphia", "philadelphia metro"
+      ],
+      "excludedLocationNote": "New Philadelphia (OH and PA) and Philadelphia in Mississippi, New York and Tennessee are separate municipalities. Metro labels cover the Pennsylvania and New Jersey suburbs, not the city.",
+      "commuteAliases": [
+        "King of Prussia, PA", "Conshohocken, PA", "Wayne, PA", "Malvern, PA",
+        "Bala Cynwyd, PA", "Camden, NJ", "Cherry Hill, NJ"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 5000,
+        "rationale": "Starting assumption follows the newer markets; supply must be measured before adjusting the quota or geography.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ]
+      },
+      "notes": "Added 2026-10-19 by user instruction. City proper in Pennsylvania only; a bare city name, metro label or suburb is not accepted. No discovery sweep has measured this market yet."
+    },
+    {
       "id": "newark",
       "label": "Newark / Jersey City, NJ",
       "state": "NJ",
