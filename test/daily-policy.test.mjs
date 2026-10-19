@@ -464,3 +464,34 @@ test('home state list answers need a real state list and a Yes/No choice', () =>
   );
   assert.equal(plan.blocked.length, 1);
 });
+
+test('most recent job title maps only to a confirmed title fact', () => {
+  const titleQuestion = [
+    { key: 't', label: 'What is your most recent job title?', required: true, type: 'text' },
+    { key: 'c', label: 'Current Job Title', required: true, type: 'text' },
+  ];
+  const field = (value) => ({
+    value,
+    source: 'confirmed',
+    confirmedAt: now.toISOString(),
+    uses: ['application'],
+  });
+  const without = mapRoutineQuestions(
+    titleQuestion,
+    role(1),
+    { version: 't', fields: {} },
+    policy,
+    now,
+  );
+  assert.equal(without.blocked.length, 2);
+  const withTitle = mapRoutineQuestions(
+    titleQuestion,
+    role(1),
+    { version: 't', fields: { currentTitle: field('Software Consultant') } },
+    policy,
+    now,
+  );
+  assert.equal(withTitle.blocked.length, 0);
+  assert.equal(withTitle.answers.t, 'currentTitle');
+  assert.equal(withTitle.answers.c, 'currentTitle');
+});
