@@ -11,6 +11,7 @@ import {
   standingChoiceAnswer,
   permanentResidentAnswer,
 } from '../lib/daily-policy.mjs';
+import { answerQuestions } from '../lib/facts-and-blockers.mjs';
 import { postedSalary, usRemote, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 const now = new Date('2026-10-15T16:00:00Z'),
   policy = {
@@ -547,6 +548,14 @@ test('standing choices apply only when enabled, with one affirmative option, nev
     now,
   );
   assert.equal(plan.blocked.length, 0);
+  // The fill step answers a consent-kind control only with a fact naming that consent.
+  const filled = answerQuestions(
+    [privacy, { ...recording, key: 'r', kind: 'consent' }],
+    { ...role(1), answers: plan.answers },
+    plan.facts,
+  );
+  assert.equal(filled.blocked.length, 0);
+  assert.equal(filled.answers.r, 'Yes');
 });
 
 test('a citizenship-category question uses the confirmed permanent-resident status', () => {
