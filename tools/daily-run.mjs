@@ -28,7 +28,7 @@ import {
 import { discoverDaily, profileCurrent, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
 import { runReplacementQueue } from '../lib/replacement-queue.mjs';
-import { rankFactGaps } from '../lib/run-insights.mjs';
+import { bump, rankFactGaps } from '../lib/run-insights.mjs';
 
 const args = process.argv.slice(2),
   option = (k) => {
@@ -271,16 +271,17 @@ try {
     const companyCap = runtime.config.autonomous?.maxApplicationsPerCompanyPerDay ?? 2;
     async function candidates() {
       const admitCompany = belowCompanyCap(store, policy.timezone, companyCap);
-      return discovered.candidates
-        .filter(
-          (r) =>
-            policy.allowedCityIds.includes(r.cityId) &&
-            !store.get(applicationId(r.url)) &&
-            admitCompany(r),
-        )
+      // The funnel records why each discovered role did not reach the pool, so
+      // a thin pool explains itself in the report.
+      const excluded = {};
+      const skip = (reason) => (bump(excluded, reason), null);
+      const pool = discovered.candidates
         .map((r) => {
+          if (!policy.allowedCityIds.includes(r.cityId)) return skip('outside_allowed_cities');
+          if (store.get(applicationId(r.url))) return skip('already_applied_or_held');
+          if (!admitCompany(r)) return skip('company_daily_cap');
           const entry = profiles.get(normalizeCompany(r.company));
-          if (!entry) return null;
+          if (!entry) return skip('no_company_profile');
           const role = { ...r, companyProfile: entry.profile };
           const city = runtime.config.cities.find((c) => c.id === role.cityId);
           const evaluated = evaluateRole(role, city, runtime.config, {
@@ -289,13 +290,13 @@ try {
             blockerIndex,
             structuredBlockers,
           });
-          if (
-            evaluated.verdict === 'rejected' ||
-            (evaluated.verdict === 'backup' && !policy.allowSalaryUnpostedBackups)
-          )
-            return null;
+          if (evaluated.verdict === 'rejected')
+            return skip('role_rejected:' + (evaluated.failures?.[0]?.check ?? 'unknown'));
+          if (evaluated.verdict === 'backup' && !policy.allowSalaryUnpostedBackups)
+            return skip('backup_not_allowed');
           // Large-company backups and household names never fill an autonomous slot.
-          if (!evaluated.checks.companyProfile.primaryEligible) return null;
+          if (!evaluated.checks.companyProfile.primaryEligible)
+            return skip('company_not_primary_eligible');
           return {
             ...role,
             ...routeResume(role, runtime.config),
@@ -305,15 +306,26 @@ try {
         })
         .filter(Boolean)
         .sort((a, b) => (a.bucket === 'backup') - (b.bucket === 'backup') || b.score - a.score);
+      report.poolFunnel = {
+        discovered: discovered.candidates.length,
+        eligible: pool.length,
+        excluded,
+      };
+      return pool;
     }
     let pool = await candidates();
     async function replenish() {
-      if (
-        args.includes('--no-research') ||
-        researchBatches >= 3 ||
-        Date.now() - started > 55 * 60000
-      )
+      const stopResearch = args.includes('--no-research')
+        ? 'disabled_by_flag'
+        : researchBatches >= 3
+          ? 'batch_limit'
+          : Date.now() - started > 55 * 60000
+            ? 'time_limit'
+            : null;
+      if (stopResearch) {
+        report.researchSkipped = { reason: stopResearch };
         return false;
+      }
       store.db.exec(
         'CREATE TABLE IF NOT EXISTS daily_research_attempts(company TEXT PRIMARY KEY,attempted_at TEXT NOT NULL)',
       );
@@ -344,7 +356,26 @@ try {
             'INSERT INTO daily_research_attempts VALUES(?,?) ON CONFLICT(company) DO UPDATE SET attempted_at=excluded.attempted_at',
           )
           .run(normalizeCompany(c.company), new Date().toISOString());
-      if (!companies.length) return false;
+      if (!companies.length) {
+        // Every remaining employer is excluded, already profiled, or was
+        // researched within seven days; more research cannot add candidates.
+        const employers = {};
+        const open = discovered.candidates.filter(
+          (r) => policy.allowedCityIds.includes(r.cityId) && !store.get(applicationId(r.url)),
+        );
+        const byName = new Map(open.map((r) => [normalizeCompany(r.company), r.company]));
+        for (const [name, company] of byName)
+          bump(
+            employers,
+            householdNameMatch(company, runtime.config)
+              ? 'household_name'
+              : profiles.has(name)
+                ? 'already_profiled'
+                : 'researched_within_7_days',
+          );
+        report.researchSkipped = { reason: 'no_unresearched_employers', employers };
+        return false;
+      }
       researchBatches++;
       report.researchBatches = researchBatches;
       if (companies.length) {
