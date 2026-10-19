@@ -29,6 +29,7 @@ import { discoverDaily, profileCurrent, verifyResearchedProfile } from '../lib/d
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
 import { runReplacementQueue } from '../lib/replacement-queue.mjs';
 import { bump, rankFactGaps } from '../lib/run-insights.mjs';
+import { resumeTitleMismatches } from '../lib/resume-title.mjs';
 
 const args = process.argv.slice(2),
   option = (k) => {
@@ -190,6 +191,14 @@ try {
     );
     if (initial.confirmed < policy.dailyLimit) process.exitCode = 2;
   } else {
+    const titleMismatches = await resumeTitleMismatches(
+      Object.keys(policy.resumes),
+      readJson(runtime.config.paths.facts),
+    );
+    if (titleMismatches.length)
+      throw Error(
+        'Resume title differs from confirmed currentTitle: ' + JSON.stringify(titleMismatches),
+      );
     // Only our dead processes may be recovered automatically. Unknown/manual
     // workers are left intact. Recovery holds every possible delivery uncertain.
     store.db.exec(
