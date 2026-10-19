@@ -79,6 +79,7 @@ and ceilings for your own search:
 | Baltimore, MD | 1 | 2 | 5,000 |
 | St. Louis, MO | 1 | 2 | 5,000 |
 | Wilmington, DE | 1 | 2 | 5,000 |
+| Philadelphia, PA | 1 | 2 | 5,000 |
 
 St. Louis was added in version 8 (2026-10-15), bringing the example pool total to 18.
 It accepts St. Louis/St Louis/Saint Louis with an explicit Missouri location.
@@ -89,6 +90,15 @@ Wilmington, Delaware was added in version 9 (2026-10-15), limited to the city.
 The example pool total is 19; the autonomous controller shares a twelve-application
 daily target across all approved locations. Wilmington was selected for its
 [financial services and fintech concentration](https://www.choosedelaware.com/wp-content/uploads/2019/09/Delaware-Fintech-Future-060519-web.pdf).
+
+Philadelphia, Pennsylvania was added in version 10 (2026-10-19), limited to the
+city, bringing the example pool total to 20. It needs an explicit Pennsylvania
+location. New Philadelphia, the same-name towns in Mississippi, New York and
+Tennessee, metro labels and suburbs such as King of Prussia do not satisfy it.
+
+Location aliases match on word boundaries. The short alias `DC` accepts
+"Washington, DC" but not "Woodcliff Lake, NJ"; exclusion patterns still match
+as substrings so they err wide.
 
 The Newark market is a **corridor**: Newark, East Newark, Jersey City, Harrison, and
 Hoboken. New York City never counts — a 15-mile sweep from Newark returns 158
