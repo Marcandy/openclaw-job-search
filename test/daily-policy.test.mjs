@@ -8,7 +8,10 @@ import {
   beginDailySubmit,
   mapRoutineQuestions,
   homeStateListAnswer,
+  standingChoiceAnswer,
+  permanentResidentAnswer,
 } from '../lib/daily-policy.mjs';
+import { answerQuestions } from '../lib/facts-and-blockers.mjs';
 import { postedSalary, usRemote, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
 const now = new Date('2026-10-15T16:00:00Z'),
   policy = {
@@ -494,4 +497,87 @@ test('most recent job title maps only to a confirmed title fact', () => {
   assert.equal(withTitle.blocked.length, 0);
   assert.equal(withTitle.answers.t, 'currentTitle');
   assert.equal(withTitle.answers.c, 'currentTitle');
+});
+
+test('standing choices apply only when enabled, with one affirmative option, never to excluded terms', () => {
+  const on = {
+    standingChoices: {
+      privacyNoticeAcknowledgment: true,
+      accuracyConfirmation: true,
+      interviewRecordingConsent: true,
+    },
+  };
+  const q = (label, options) => ({ key: 'k', label, required: true, type: 'combobox', options });
+  const privacy = q(
+    'By submitting my application, I acknowledge that I have read and understand Vercel’s Job Applicant Privacy Notice',
+    ['Acknowledge/Confirm'],
+  );
+  const accuracy = q(
+    'Please double-check all the information provided above. Ensuring accuracy is crucial.',
+    ['I have reviewed and confirmed that all the information provided is accurate and complete.'],
+  );
+  const recording = q('Interview Recording Consent', ['Yes', 'No']);
+  assert.equal(standingChoiceAnswer(privacy, privacy.label, on).option, 'Acknowledge/Confirm');
+  assert.match(standingChoiceAnswer(accuracy, accuracy.label, on).option, /reviewed and confirmed/);
+  assert.equal(standingChoiceAnswer(recording, recording.label, on).option, 'Yes');
+  assert.equal(
+    standingChoiceAnswer(
+      q('Do you consent to the use of an AI notetaker during your interviews?', ['Yes', 'No']),
+      'Do you consent to the use of an AI notetaker during your interviews?',
+      on,
+    ).option,
+    'Yes',
+  );
+  // Disabled, ambiguous, checkbox-only and excluded terms stay blocked.
+  assert.equal(standingChoiceAnswer(privacy, privacy.label, {}), null);
+  assert.equal(
+    standingChoiceAnswer(q(privacy.label, ['Yes', 'Acknowledge']), privacy.label, on),
+    null,
+  );
+  assert.equal(standingChoiceAnswer(q(privacy.label, []), privacy.label, on), null);
+  const arbitration = 'I acknowledge the privacy notice and agree to binding arbitration';
+  assert.equal(standingChoiceAnswer(q(arbitration, ['Yes']), arbitration, on), null);
+  const marketing = 'I have read the privacy policy and want marketing emails';
+  assert.equal(standingChoiceAnswer(q(marketing, ['Yes']), marketing, on), null);
+  // A required question reaches the plan; an optional one is left empty.
+  const plan = mapRoutineQuestions(
+    [privacy, { ...recording, key: 'r' }],
+    role(1),
+    { version: 't', fields: {} },
+    on,
+    now,
+  );
+  assert.equal(plan.blocked.length, 0);
+  // The fill step answers a consent-kind control only with a fact naming that consent.
+  const filled = answerQuestions(
+    [privacy, { ...recording, key: 'r', kind: 'consent' }],
+    { ...role(1), answers: plan.answers },
+    plan.facts,
+  );
+  assert.equal(filled.blocked.length, 0);
+  assert.equal(filled.answers.r, 'Yes');
+});
+
+test('a citizenship-category question uses the confirmed permanent-resident status', () => {
+  const pr = 'Lawful Permanent Resident (Green Card)';
+  const yesNo = {
+    label:
+      'Are you a U.S. citizen, U.S. permanent resident (green card holder), or protected individual under 8 U.S.C. 1324b(a)(3)?',
+    options: ['Yes', 'No'],
+  };
+  assert.equal(permanentResidentAnswer(yesNo, yesNo.label, pr), 'Yes');
+  const categories = {
+    label: 'What is your U.S. citizenship or permanent resident status?',
+    options: [
+      'U.S. Citizen',
+      'U.S. Permanent Resident (Green Card)',
+      'Not a citizen or permanent resident',
+    ],
+  };
+  assert.equal(
+    permanentResidentAnswer(categories, categories.label, pr),
+    'U.S. Permanent Resident (Green Card)',
+  );
+  assert.equal(permanentResidentAnswer(yesNo, yesNo.label, 'U.S. Citizen'), null);
+  assert.equal(permanentResidentAnswer(yesNo, 'Are you a U.S. citizen?', pr), null);
 });

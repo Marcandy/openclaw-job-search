@@ -213,3 +213,55 @@ test('live adapter retains hidden Yes/No values, declines optional cookies and r
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('Greenhouse dropdown choices are read by opening the menu, without choosing one', async () => {
+  const browser = await chromium.launch({ headless: true }),
+    context = await browser.newContext(),
+    dir = mkdtempSync(join(tmpdir(), 'daily-gh-combobox-'));
+  // A menu that renders its options only while open, like Greenhouse's react-select.
+  const body = `<h1>Software Engineer</h1>
+    <label for="question_1">Where did you first hear about this role?*</label>
+    <input id="question_1" role="combobox" aria-required="true" aria-expanded="false">
+    <div id="menu"></div>
+    <script>
+      const input = document.getElementById('question_1'), menu = document.getElementById('menu');
+      input.addEventListener('click', () => {
+        input.setAttribute('aria-controls', 'menu');
+        input.setAttribute('aria-expanded', 'true');
+        menu.innerHTML = ['LinkedIn', 'Other job boards', 'Other']
+          .map((o) => '<div role="option">' + o + '</div>').join('');
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        menu.innerHTML = '';
+        input.setAttribute('aria-expanded', 'false');
+      });
+    </script>`;
+  await context.route('**/*', (r) => r.fulfill({ contentType: 'text/html', body }));
+  const driver = await liveAtsDriver({ context, receiptDir: dir, location: {} });
+  try {
+    const live = await driver.preflight({
+      source: 'greenhouse',
+      title: 'Software Engineer',
+      url: 'https://job-boards.greenhouse.io/example/jobs/123',
+    });
+    const q = live.questions.find((x) => x.key === 'question_1');
+    assert.deepEqual(q.options, ['LinkedIn', 'Other job boards', 'Other']);
+    const page = context.pages().at(-1);
+    assert.equal(await page.locator('#question_1').inputValue(), '');
+    assert.equal(await page.locator('[role=option]').count(), 0, 'menu closed again');
+  } finally {
+    await driver.closePosting();
+    await browser.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a home-city answer matches the approved location query by leading words', async () => {
+  const { sameCity } = await import('../lib/live-ats-driver.mjs');
+  assert.equal(sameCity('New York, NY', 'New York'), true);
+  assert.equal(sameCity('New York City, New York, United States', 'New York'), true);
+  assert.equal(sameCity('Newark, NJ', 'New York'), false);
+  assert.equal(sameCity('York, PA', 'New York'), false);
+  assert.equal(sameCity('New York', ''), false);
+});
