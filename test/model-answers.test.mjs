@@ -277,3 +277,25 @@ test('long text is cut at a sentence; unfillable fields never reach the model', 
   );
   assert.ok(accepted[0].value.length <= 700 && accepted[0].value.endsWith('.'));
 });
+
+test('a reply with trailing junk still yields its first complete JSON object', () => {
+  const reply =
+    'Here you go:\n```json\n{"companies":[{"company":"Hark","profile":{"note":"braces } and \\" quotes in strings"}}]}]}\n```';
+  assert.deepEqual(parseModelReply(reply), {
+    companies: [{ company: 'Hark', profile: { note: 'braces } and " quotes in strings' } }],
+  });
+  assert.throws(() => parseModelReply('no json here'), /no JSON object/);
+  assert.throws(() => parseModelReply('{"companies":[{"company":"Hark"'), /incomplete/);
+});
+
+test('a mismatched closing bracket is repaired instead of losing the reply', () => {
+  // The October 20 research reply closed the last company with "]" instead of "}".
+  const reply =
+    '{"companies":[{"company":"A","profile":{"n":1}},{"company":"Hark","profile":{"s":[{"x":"y"}]}]}]}';
+  assert.deepEqual(parseModelReply(reply), {
+    companies: [
+      { company: 'A', profile: { n: 1 } },
+      { company: 'Hark', profile: { s: [{ x: 'y' }] } },
+    ],
+  });
+});

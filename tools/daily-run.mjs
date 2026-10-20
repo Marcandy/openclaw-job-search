@@ -226,7 +226,17 @@ async function researchProfiles(companies) {
       : '';
     const result = await researchRound(targets, retryNote);
     accepted.push(...result.accepted);
-    failures = result.failures;
+    // A company the second round leaves out keeps its first-round failure.
+    const answered = new Set(
+      [
+        ...result.accepted.map((a) => a.company),
+        ...result.failures.map((f) => f.target.company),
+      ].map(normalizeCompany),
+    );
+    failures = [
+      ...result.failures,
+      ...(round ? failures.filter((f) => !answered.has(normalizeCompany(f.target.company))) : []),
+    ];
   }
   for (const f of failures)
     report.results.push({
@@ -253,7 +263,7 @@ async function researchRound(companies, retryNote) {
       }),
     { delaysMs: MODEL_RETRY_DELAYS },
   );
-  const parsed = JSON.parse(text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, ''));
+  const parsed = parseModelReply(text);
   const byName = new Map(companies.map((c) => [normalizeCompany(c.company), c])),
     accepted = [],
     failures = [];
