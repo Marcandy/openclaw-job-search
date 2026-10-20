@@ -623,3 +623,33 @@ test('"how you heard about our company" uses the same truthful source answer', (
   assert.equal(plan.blocked.length, 0);
   assert.equal(plan.facts.fields[plan.answers['cards[x][field0]']].value, 'Other');
 });
+
+test('a team stated as "around 70 people" counts as a headcount excerpt', async () => {
+  const page = '<p>Over the past several months, our team has grown to around 70 people.</p>';
+  const signal =
+    '<p>We have raised over $700 million in Series A funding at a $6 billion valuation.</p>';
+  const fetcher = async (url) =>
+    new Response(url.endsWith('/team') ? page : signal, {
+      headers: { 'content-type': 'text/html' },
+    });
+  const item = {
+    company: 'Hark',
+    profile: {
+      headcountMin: 70,
+      headcountMax: 70,
+      headcountSourceUrl: 'https://example.org/team',
+      headcountExcerpt: 'Over the past several months, our team has grown to around 70 people.',
+      isHouseholdName: false,
+      thrivingSignals: [
+        {
+          type: 'recent_funding_round',
+          asOf: '2026-05-20',
+          sourceUrl: 'https://example.org/funding',
+          excerpt: 'We have raised over $700 million in Series A funding',
+        },
+      ],
+    },
+  };
+  const verified = await verifyResearchedProfile(item, { fetcher, now });
+  assert.equal(verified.company, 'Hark');
+});
