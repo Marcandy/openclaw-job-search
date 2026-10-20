@@ -239,3 +239,41 @@ test('a rate-limited call moves to the fallback model, then back to the primary'
   assert.deepEqual(used, ['sol', 'luna', 'sol']);
   assert.equal(modelForAttempt(1, 'sol', undefined), 'sol', 'no fallback keeps the primary');
 });
+
+test('long text is cut at a sentence; unfillable fields never reach the model', async () => {
+  const { fitLength } = await import('../lib/model-answers.mjs');
+  assert.equal(fitLength('First sentence. Second one is longer.', 20), 'First sentence.');
+  assert.equal(fitLength('Short.', 200), 'Short.');
+  assert.equal(fitLength('One very long sentence without any break at all', 10), null);
+  const blocked = (key) => ({
+    key,
+    label: 'How did you hear about us?',
+    reason: 'unknown_fact_or_control',
+  });
+  const qs = [
+    q('unmapped_15', 'How did you hear about us?', { type: 'combobox', options: ['Other'] }),
+    q('empty', 'How did you hear about us?', { type: 'combobox', options: [] }),
+    q('ok', 'How did you hear about us?', { type: 'combobox', options: ['Other'] }),
+  ];
+  assert.deepEqual(
+    modelEligible([blocked('unmapped_15'), blocked('empty'), blocked('ok')], qs).map((x) => x.key),
+    ['ok'],
+  );
+  const long = 'I write pytest suites for API endpoints. '.repeat(30);
+  const { accepted } = validateModelAnswers(
+    [questions[5]],
+    {
+      answers: [
+        {
+          key: 'api',
+          text: long,
+          basis: 'resume',
+          evidence: 'Write pytest suites for API endpoints',
+        },
+      ],
+    },
+    facts,
+    resumeText,
+  );
+  assert.ok(accepted[0].value.length <= 700 && accepted[0].value.endsWith('.'));
+});
