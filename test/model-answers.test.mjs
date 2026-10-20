@@ -188,3 +188,38 @@ test('accepted answers become sourced facts that the fill step accepts', () => {
   assert.deepEqual(filled, { answers: { qa: 'No' }, blocked: [] });
   assert.match(plan.facts.fields[plan.answers.qa].source, /honest_negative/);
 });
+
+test('rate limits and provider cooldowns are retried; other errors are not', async () => {
+  const { retryTransient } = await import('../lib/model-answers.mjs');
+  const waits = [];
+  const sleep = async (ms) => waits.push(ms);
+  let calls = 0;
+  const flaky = async () => {
+    if (++calls < 3)
+      throw Error('FailoverError: exceeded retry limit, last status: 429 Too Many Requests');
+    return 'ok';
+  };
+  assert.equal(await retryTransient(flaky, { delaysMs: [1, 2], sleep }), 'ok');
+  assert.deepEqual(waits, [1, 2]);
+  await assert.rejects(
+    retryTransient(
+      async () => {
+        throw Error('Provider openai is in cooldown');
+      },
+      { delaysMs: [1], sleep },
+    ),
+    /cooldown/,
+  );
+  let bad = 0;
+  await assert.rejects(
+    retryTransient(
+      async () => {
+        bad++;
+        throw Error('Unexpected token < in JSON');
+      },
+      { delaysMs: [1, 2], sleep },
+    ),
+    /Unexpected token/,
+  );
+  assert.equal(bad, 1);
+});

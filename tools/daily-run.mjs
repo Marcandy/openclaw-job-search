@@ -37,6 +37,7 @@ import {
   parseModelReply,
   validateModelAnswers,
   applyModelAnswers,
+  retryTransient,
 } from '../lib/model-answers.mjs';
 
 const args = process.argv.slice(2),
@@ -179,12 +180,16 @@ async function modelAssist(plan, questions, role, facts) {
   const resumeText = resumeTexts.get(role.resumePath);
   const request = join(dayDir, 'form-answers-' + Date.now() + '.txt');
   writeFileSync(request, buildAnswerPrompt({ role, questions: eligible, facts, resumeText }));
+  // A rate-limited or cooling-down provider usually recovers within a minute.
+  let attempt = 0;
   const reply = parseModelReply(
-    await askOpenClaw(request, {
-      sessionKey: 'daily-form-answers-' + applicationId(role.url),
-      timeoutSeconds: 150,
-      label: 'form-answers',
-    }),
+    await retryTransient(() =>
+      askOpenClaw(request, {
+        sessionKey: `daily-form-answers-${applicationId(role.url)}-${attempt++}`,
+        timeoutSeconds: 120,
+        label: 'form-answers',
+      }),
+    ),
   );
   const { accepted, rejected } = validateModelAnswers(eligible, reply, facts, resumeText);
   applyModelAnswers(plan, accepted, role);
