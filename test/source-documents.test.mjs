@@ -78,9 +78,48 @@ test('evidence rejects local URLs and oversized streams before parsing', async (
   }
   await assert.rejects(
     readEvidenceSource('https://example.org/huge', {
-      fetcher: async () => new Response('a'.repeat(5000001)),
+      fetcher: async () => new Response('a'.repeat(20000001)),
     }),
     /size budget/,
+  );
+  await assert.rejects(
+    readEvidenceSource('https://example.org/huge.pdf', {
+      fetcher: async () => new Response('%PDF-' + 'a'.repeat(5000001)),
+    }),
+    /size budget/,
+  );
+});
+
+test('evidence follows public redirects with browser headers and refuses private hops', async () => {
+  const seen = [];
+  const fetcher = async (url, options) => {
+    seen.push({ url, options });
+    if (url === 'https://example.org/about')
+      return new Response('', { status: 301, headers: { location: '/about/' } });
+    return new Response('<p>We have about 350 employees across three offices.</p>', {
+      headers: { 'content-type': 'text/html' },
+    });
+  };
+  const source = await readEvidenceSource('https://example.org/about', { fetcher });
+  assert.match(source.text, /about 350 employees/);
+  assert.deepEqual(
+    seen.map((s) => s.url),
+    ['https://example.org/about', 'https://example.org/about/'],
+  );
+  assert.equal(seen[0].options.redirect, 'manual');
+  assert.match(seen[0].options.headers['user-agent'], /Mozilla/);
+  await assert.rejects(
+    readEvidenceSource('https://example.org/out', {
+      fetcher: async () =>
+        new Response('', { status: 302, headers: { location: 'https://127.0.0.1/admin' } }),
+    }),
+    /public HTTPS/,
+  );
+  await assert.rejects(
+    readEvidenceSource('https://example.org/loop', {
+      fetcher: async (url) => new Response('', { status: 302, headers: { location: url + 'x' } }),
+    }),
+    /too many times/,
   );
 });
 
