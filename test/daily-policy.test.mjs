@@ -602,3 +602,24 @@ test('research targets rank employers by eligible roles, one entry each', () => 
   ]);
   assert.deepEqual(rankResearchTargets([], 8), []);
 });
+
+test('"how you heard about our company" uses the same truthful source answer', () => {
+  const plan = mapRoutineQuestions(
+    [
+      {
+        key: 'cards[x][field0]',
+        label:
+          'We like to know where great talent comes from. Please select the option that best applies to how you heard about our company or this opportunity.',
+        required: true,
+        type: 'radio',
+        options: ['LinkedIn', 'Referral', 'Other'],
+      },
+    ],
+    role(1),
+    { version: 't', fields: {} },
+    policy,
+    now,
+  );
+  assert.equal(plan.blocked.length, 0);
+  assert.equal(plan.facts.fields[plan.answers['cards[x][field0]']].value, 'Other');
+});
