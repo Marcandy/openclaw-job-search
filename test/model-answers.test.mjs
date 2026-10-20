@@ -223,3 +223,19 @@ test('rate limits and provider cooldowns are retried; other errors are not', asy
   );
   assert.equal(bad, 1);
 });
+
+test('a rate-limited call moves to the fallback model, then back to the primary', async () => {
+  const { retryTransient, modelForAttempt } = await import('../lib/model-answers.mjs');
+  const used = [];
+  const reply = await retryTransient(
+    async (attempt) => {
+      used.push(modelForAttempt(attempt, 'sol', 'luna'));
+      if (used.length < 3) throw Error('429 Too Many Requests');
+      return 'ok';
+    },
+    { delaysMs: [0, 0, 0], sleep: async () => {} },
+  );
+  assert.equal(reply, 'ok');
+  assert.deepEqual(used, ['sol', 'luna', 'sol']);
+  assert.equal(modelForAttempt(1, 'sol', undefined), 'sol', 'no fallback keeps the primary');
+});
