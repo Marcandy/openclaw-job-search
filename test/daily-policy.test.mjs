@@ -12,7 +12,12 @@ import {
   permanentResidentAnswer,
 } from '../lib/daily-policy.mjs';
 import { answerQuestions } from '../lib/facts-and-blockers.mjs';
-import { postedSalary, usRemote, verifyResearchedProfile } from '../lib/daily-discovery.mjs';
+import {
+  postedSalary,
+  usRemote,
+  verifyResearchedProfile,
+  rankResearchTargets,
+} from '../lib/daily-discovery.mjs';
 const now = new Date('2026-10-15T16:00:00Z'),
   policy = {
     dailyLimit: 12,
@@ -580,4 +585,20 @@ test('a citizenship-category question uses the confirmed permanent-resident stat
   );
   assert.equal(permanentResidentAnswer(yesNo, yesNo.label, 'U.S. Citizen'), null);
   assert.equal(permanentResidentAnswer(yesNo, 'Are you a U.S. citizen?', pr), null);
+});
+
+test('research targets rank employers by eligible roles, one entry each', () => {
+  const roles = [
+    { company: 'Hark', url: 'h1' },
+    { company: 'Scale AI', url: 's1' },
+    { company: 'Scale AI', url: 's2' },
+    { company: 'scale ai', url: 's3' },
+    { company: 'Etched', url: 'e1' },
+    { company: 'Etched', url: 'e2' },
+  ];
+  assert.deepEqual(rankResearchTargets(roles, 2), [
+    { company: 'Scale AI', url: 's1', roles: 3 },
+    { company: 'Etched', url: 'e1', roles: 2 },
+  ]);
+  assert.deepEqual(rankResearchTargets([], 8), []);
 });
