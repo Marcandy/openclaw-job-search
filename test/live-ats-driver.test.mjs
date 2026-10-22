@@ -265,3 +265,58 @@ test('a home-city answer matches the approved location query by leading words', 
   assert.equal(sameCity('York, PA', 'New York'), false);
   assert.equal(sameCity('New York', ''), false);
 });
+
+test('an Ashby multiple-choice question ticks the approved option, not the first one', async () => {
+  const browser = await chromium.launch({ headless: true }),
+    context = await browser.newContext(),
+    dir = mkdtempSync(join(tmpdir(), 'daily-ats-'));
+  const bytes = Buffer.from('synthetic PDF bytes');
+  const d = {
+    company: 'Example',
+    title: 'Software Engineer',
+    source: 'ashby',
+    url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000002',
+    resumePath: 'C:\\private\\Resume.pdf',
+    resumeHash: createHash('sha256').update(bytes).digest('hex'),
+  };
+  const option = (label) =>
+    `<label><input type="checkbox" name="${label}"><span>${label}</span></label>`;
+  await context.route('**/*', (r) =>
+    r.fulfill({
+      contentType: 'text/html',
+      body: `<h1>Software Engineer</h1><form><div data-field-path="_systemfield_name"><label for="_systemfield_name">Name</label><input id="_systemfield_name" required></div><label for="_systemfield_resume">Resume</label><input type="file" id="_systemfield_resume" required><span id="filename"></span><div class="ashby-application-form-field-entry"><label class="required">From where do you intend to work?</label>${['San Francisco (Hybrid)', 'New York City (Hybrid)', 'Remote - US'].map(option).join('')}</div><button type="submit">Submit Application</button></form><script>document.querySelector('#_systemfield_resume').onchange=e=>document.querySelector('#filename').textContent=e.target.files[0].name;</script>`,
+    }),
+  );
+  const driver = await liveAtsDriver({ context, receiptDir: dir, location: {}, headless: true });
+  try {
+    const pre = await driver.preflight(d);
+    const where = pre.questions.find((q) => q.label === 'From where do you intend to work?');
+    assert.deepEqual(where.options, [
+      'San Francisco (Hybrid)',
+      'New York City (Hybrid)',
+      'Remote - US',
+    ]);
+    await driver.fill(
+      d,
+      { _systemfield_name: 'Example Applicant', [where.key]: 'Remote - US' },
+      bytes,
+    );
+    const page = context.pages()[0];
+    assert.equal(await page.locator('input[name="Remote - US"]').isChecked(), true);
+    assert.equal(await page.locator('input[name="San Francisco (Hybrid)"]').isChecked(), false);
+    const final = await driver.inspect(d);
+    assert.deepEqual(final.questions, pre.questions);
+    await assert.rejects(
+      driver.fill(
+        d,
+        { _systemfield_name: 'Example Applicant', [where.key]: 'Boston (Hybrid)' },
+        bytes,
+      ),
+      /Checkbox label mismatch/,
+    );
+  } finally {
+    await driver.closePosting();
+    await browser.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
