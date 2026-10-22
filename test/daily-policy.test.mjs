@@ -653,3 +653,61 @@ test('a team stated as "around 70 people" counts as a headcount excerpt', async 
   const verified = await verifyResearchedProfile(item, { fetcher, now });
   assert.equal(verified.company, 'Hark');
 });
+
+test('a where-will-you-work choice follows the role, and the remote city comes from its own fact', () => {
+  const field = (value) => ({
+    value,
+    source: 'confirmed',
+    confirmedAt: now.toISOString(),
+    uses: ['application'],
+  });
+  const f = { version: 'test', fields: { remoteWorkLocation: field('Newark, NJ') } };
+  const where = {
+    key: 'San Francisco (Hybrid)',
+    label: 'From where do you intend to work?',
+    required: true,
+    type: 'checkbox',
+    kind: 'fact',
+    grouped: true,
+    options: ['San Francisco (Hybrid)', 'New York City (Hybrid)', 'Remote - US'],
+  };
+  const city = {
+    key: 'question_1',
+    label: 'If Remote, what city/state will you be working from?',
+    required: true,
+    type: 'text',
+    kind: 'fact',
+  };
+  const remote = mapRoutineQuestions(
+    [where, city],
+    { ...role(1), cityId: 'us-remote', location: 'Remote, United States' },
+    f,
+    policy,
+    now,
+  );
+  assert.deepEqual(remote.blocked, []);
+  assert.equal(remote.facts.fields[remote.answers[where.key]].value, 'Remote - US');
+  assert.equal(remote.answers[city.key], 'remoteWorkLocation');
+
+  const onsite = mapRoutineQuestions(
+    [where],
+    { ...role(2), cityId: 'newark', location: 'New York City, NY' },
+    f,
+    policy,
+    now,
+  );
+  assert.equal(onsite.facts.fields[onsite.answers[where.key]].value, 'New York City (Hybrid)');
+
+  // No matching option, or more than one, stays blocked for the applicant.
+  const elsewhere = mapRoutineQuestions(
+    [where],
+    { ...role(3), cityId: 'chicago', location: 'Chicago, IL' },
+    f,
+    policy,
+    now,
+  );
+  assert.deepEqual(
+    elsewhere.blocked.map((b) => b.key),
+    [where.key],
+  );
+});
