@@ -711,3 +711,38 @@ test('a where-will-you-work choice follows the role, and the remote city comes f
     [where.key],
   );
 });
+
+test('a required pronouns question is declined like other demographic questions', () => {
+  const pronouns = {
+    key: 'question_33021799003',
+    label: 'Pronouns',
+    required: true,
+    type: 'combobox',
+    kind: 'fact',
+    options: [
+      'He/him/his',
+      'She/her/hers',
+      'They/them/theirs',
+      'My pronouns are not listed',
+      'I prefer not to say',
+      'I prefer to self describe',
+    ],
+  };
+  const plan = mapRoutineQuestions(
+    [pronouns],
+    role(1),
+    { version: 'test', fields: {} },
+    policy,
+    now,
+  );
+  assert.deepEqual(plan.blocked, []);
+  assert.equal(plan.facts.fields[plan.answers[pronouns.key]].value, 'I prefer not to say');
+  const optional = mapRoutineQuestions(
+    [{ ...pronouns, required: false }],
+    role(1),
+    { version: 'test', fields: {} },
+    policy,
+    now,
+  );
+  assert.equal(optional.answers[pronouns.key], undefined);
+});
