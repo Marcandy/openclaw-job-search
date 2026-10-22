@@ -45,6 +45,12 @@ import {
   retryTransient,
   modelForAttempt,
 } from '../lib/model-answers.mjs';
+import { desktopNotify } from '../lib/notify.mjs';
+import {
+  codeWaitBudget,
+  manualCompletionEntry,
+  recordManualCompletion,
+} from '../lib/code-handoff.mjs';
 
 const args = process.argv.slice(2),
   option = (k) => {
@@ -520,12 +526,33 @@ try {
     report.candidateCount = pool.length;
     report.researchUsed = researchBatches > 0;
     checkpoint();
+    // Greenhouse's emailed code: wait for the applicant at a visible browser
+    // when the policy allows it; otherwise the posting goes to the manual list.
+    const headless = runtime.config.autonomous?.headless ?? false,
+      codeRule = policy.verificationCodeEntry;
+    const codeBudget =
+      codeRule?.enabled && !headless
+        ? codeWaitBudget({
+            maxWaitMs: (codeRule.maxWaitMinutes ?? 10) * 60000,
+            totalWaitMs: (codeRule.maxRunWaitMinutes ?? 20) * 60000,
+            deadline: () => started + 75 * 60000,
+          })
+        : null;
     driver = await liveAtsDriver({
       profilePath: join(runtime.root, 'daily-browser'),
       receiptDir: join(dayDir, runId, 'receipts'),
       location: policy.location,
-      headless: runtime.config.autonomous?.headless ?? false,
+      headless,
+      codeEntry: codeBudget && {
+        ...codeBudget,
+        notify: (d, ms) =>
+          desktopNotify(
+            `OpenClaw: enter the email code for ${d.company}`,
+            `${d.title}. Greenhouse emailed an 8-character code to ${facts.fields.email?.value ?? 'your inbox'}. Type it into the open Chrome window within ${Math.floor(ms / 60000)} minutes; OpenClaw presses Submit.`,
+          ),
+      },
     });
+    report.manualCompletion = [];
     const maxPreflight = Number(option('--max-preflight') ?? 50);
     const queue = await runReplacementQueue({
       candidates,
@@ -541,19 +568,22 @@ try {
       attempt: async (role) => {
         let id,
           modelAnswers,
-          startedSubmit = false;
+          startedSubmit = false,
+          live,
+          plan,
+          filled;
         try {
           reverify();
           if (!policy.resumes[role.resumePath])
             throw Error('Resume not covered by standing policy');
-          const live = await driver.preflight(role);
+          live = await driver.preflight(role);
           if (
             !samePosting(live.url, role) ||
             live.title.trim().toLowerCase() !== role.title.trim().toLowerCase() ||
             live.blockedReason
           )
             throw Error(live.blockedReason ?? 'Official posting changed');
-          const plan = mapRoutineQuestions(live.questions, role, facts, policy);
+          plan = mapRoutineQuestions(live.questions, role, facts, policy);
           if (plan.blocked.length) {
             try {
               modelAnswers = await modelAssist(plan, live.questions, role, facts);
@@ -610,11 +640,8 @@ try {
             state.authorization.manifestHash,
           );
           store.transition(id, runId, 'filling');
-          await driver.fill(
-            d,
-            answerQuestions(live.questions, d, plan.facts).answers,
-            readFileSync(d.resumePath),
-          );
+          filled = answerQuestions(live.questions, d, plan.facts).answers;
+          await driver.fill(d, filled, readFileSync(d.resumePath));
           const final = await driver.inspect(d),
             finalPlan = answerQuestions(final.questions, d, plan.facts);
           if (
@@ -658,6 +685,29 @@ try {
                 evidence: e.evidence,
               });
           }
+          // Stopped at the emailed-code gate and verified as not sent: list it
+          // with the filled answers so the applicant can finish it by hand.
+          if (startedSubmit && e.rejectedBeforeDelivery && e.evidence?.deliveryGate) {
+            try {
+              recordManualCompletion(
+                runtime.root,
+                manualCompletionEntry({
+                  role,
+                  questions: live.questions,
+                  filled,
+                  reason: e.message,
+                }),
+              );
+              report.manualCompletion.push({
+                company: role.company,
+                title: role.title,
+                url: role.url,
+                reason: e.message,
+              });
+            } catch (listError) {
+              report.manualCompletionError = listError.message;
+            }
+          }
           report.results.push({
             company: role.company,
             title: role.title,
@@ -679,6 +729,11 @@ try {
     report.attempted = queue.attempted;
     // Which missing answers would have unlocked the most skipped roles.
     report.factGaps = rankFactGaps(report.results);
+    if (report.manualCompletion.length)
+      await desktopNotify(
+        `OpenClaw: ${report.manualCompletion.length} application(s) to finish by hand`,
+        `They stopped at Greenhouse's email-code check and were not sent. See ${join(runtime.root, 'manual-completion.md')}`,
+      );
     report.researchBatches = researchBatches;
     report.final = dailyUsage(store, policy.timezone);
     report.status = args.includes('--preflight-only')
