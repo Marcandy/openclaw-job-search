@@ -105,3 +105,54 @@ test('an excerpt missing from raw HTML is checked once more against the rendered
     /does not corroborate/,
   );
 });
+
+test('a model-reported size counts when its page cannot be read, if the user allows it', async () => {
+  const profile = {
+    headcountMin: 598,
+    headcountMax: 598,
+    headcountSourceUrl: 'https://www.tipranks.com/private-companies/fluidstack',
+    headcountExcerpt: 'Fluidstack had 598 employees as of October 12, 2026.',
+    isHouseholdName: false,
+    thrivingSignals: [
+      {
+        type: 'recent_funding_round',
+        asOf: '2026-09-01',
+        sourceUrl: 'https://example.org/news',
+        excerpt: 'Fluidstack raised new funding in September 2026.',
+      },
+    ],
+  };
+  const fetcher = async (url) =>
+    /tipranks/.test(url)
+      ? new Response('Forbidden', { status: 403 })
+      : new Response(`<p>${profile.thrivingSignals[0].excerpt}</p>`);
+  await assert.rejects(
+    verifyResearchedProfile({ company: 'Fluidstack', profile }, { fetcher, now }),
+    /Evidence HTTP 403/,
+  );
+  const relaxed = await verifyResearchedProfile(
+    { company: 'Fluidstack', profile },
+    { fetcher, now, acceptModelReported: true },
+  );
+  assert.equal(relaxed.verification, 'model_reported');
+  assert.deepEqual(
+    relaxed.unverifiedSources.map((s) => s.url),
+    [profile.headcountSourceUrl],
+  );
+  assert.equal(relaxed.sourceDocuments.length, 1, 'the readable signal is still confirmed');
+  // The excerpt must still state the claimed size, and the source must be public HTTPS.
+  await assert.rejects(
+    verifyResearchedProfile(
+      { company: 'Fluidstack', profile: { ...profile, headcountMax: 900 } },
+      { fetcher, now, acceptModelReported: true },
+    ),
+    /interval/,
+  );
+  await assert.rejects(
+    verifyResearchedProfile(
+      { company: 'Fluidstack', profile: { ...profile, headcountSourceUrl: 'http://10.0.0.1/x' } },
+      { fetcher, now, acceptModelReported: true },
+    ),
+    /public HTTPS/,
+  );
+});

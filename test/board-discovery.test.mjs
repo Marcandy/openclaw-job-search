@@ -60,3 +60,19 @@ test('Lever pagination fetches all pages rather than interpreting a partial boar
   assert.equal(calls.length, 2);
   assert.match(calls[1], /skip=100/);
 });
+
+test('a Greenhouse posting is dated by first_published, never by updated_at', async () => {
+  const { normalizePosting } = await import('../lib/board-discovery.mjs');
+  const posting = normalizePosting(
+    { platform: 'greenhouse', slug: 'acme', company: 'Acme' },
+    {
+      id: 1,
+      title: 'Software Engineer',
+      absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/1',
+      location: { name: 'Chicago, IL' },
+      first_published: '2026-08-19T12:29:00-04:00',
+      updated_at: '2026-10-16T17:13:47-04:00',
+    },
+  );
+  assert.equal(posting.postedDate, '2026-08-19T12:29:00-04:00');
+});

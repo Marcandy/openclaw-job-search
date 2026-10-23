@@ -552,6 +552,54 @@
         "note": "Raises SIZE only. Baltimore's anchors (Johns Hopkins, Under Armour, T. Rowe Price, Northrop Grumman) are household names and stay barred from primary."
       },
       "notes": "Added 2026-10-09 by user instruction. Supply unmeasured. Like DC, expect a large cleared-defense share that knownBlockerFilter will reject."
+    },
+    {
+      "id": "denver",
+      "label": "Denver, CO",
+      "state": "CO",
+      "dailyQuota": 0,
+      "minBackups": 0,
+      "acceptedLocationAliases": [
+        "Denver, CO",
+        "Denver CO",
+        "Denver, Colorado",
+        "Denver Colorado",
+        "US-CO-Denver",
+        "CO - Denver",
+        "Denver, CO, USA"
+      ],
+      "excludedLocationPatterns": [
+        "denver, nc",
+        "denver, north carolina",
+        "denver, pa",
+        "denver, pennsylvania",
+        "denver, ia",
+        "denver, iowa",
+        "denver city",
+        "greater denver",
+        "denver metro",
+        "denver metropolitan"
+      ],
+      "excludedLocationNote": "Denver in North Carolina, Pennsylvania and Iowa, and Denver City, TX, are separate places. Metro labels cover the suburbs, not the city.",
+      "commuteAliases": [
+        "Aurora, CO",
+        "Lakewood, CO",
+        "Englewood, CO",
+        "Greenwood Village, CO",
+        "Boulder, CO",
+        "Broomfield, CO"
+      ],
+      "commuteAliasesAllowed": false,
+      "companyProfileOverride": {
+        "primaryHeadcountMax": 10000,
+        "rationale": "Sized like the other markets after the 2026-10-22 instruction raising the ceiling to 10,000.",
+        "stillEnforced": [
+          "isHouseholdName must still be false for a primary slot",
+          "at least one verified thriving signal with a dated detail and source URL",
+          "all title, roleRelevance, experience, eligibility, salary, location, source, and blocker gates"
+        ]
+      },
+      "notes": "Added 2026-10-22 by user instruction (\"add Philadelhia and denver to the list of cities\"). City proper in Colorado only; a bare city name, metro label or suburb is not accepted."
     }
   ],
   "titleFilter": {
