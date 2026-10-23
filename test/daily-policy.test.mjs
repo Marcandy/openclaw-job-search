@@ -778,3 +778,42 @@ test("pronouns use the applicant's confirmed answer when one is on file", () => 
   );
   assert.equal(text.facts.fields[text.answers.question_1].value, 'he/him');
 });
+
+test('restrictive-agreement questions are answered No only from confirmed facts', () => {
+  const field = (value) => ({
+    value,
+    source: 'confirmed',
+    confirmedAt: now.toISOString(),
+    uses: ['application'],
+  });
+  const facts = (noncompete, nonsolicitation) => ({
+    version: 'test',
+    fields: { noncompete: field(noncompete), nonsolicitation: field(nonsolicitation) },
+  });
+  const scale = {
+    key: 'question_1',
+    label:
+      'Are you currently bound by any agreements with a current or former employer that may restrict your ability to work for Scale AI or perform the duties of the position for which you are applying? This includes, but is not limited to, non-compete agreements, non-solicitation agreements, confidentiality or non-disclosure agreements.',
+    required: true,
+    type: 'combobox',
+    kind: 'fact',
+    options: ['Yes', 'No'],
+  };
+  // A non-breaking hyphen in "non‑compete" is the same question.
+  const fluidstack = {
+    ...scale,
+    key: 'question_2',
+    label:
+      'Are you currently subject to any agreement (such as a non‑compete, non‑solicitation, non‑disclosure, or similar restriction) that could limit your ability to perform this role?',
+  };
+  const plan = mapRoutineQuestions([scale, fluidstack], role(1), facts(false, false), policy, now);
+  assert.deepEqual(plan.blocked, []);
+  assert.equal(plan.facts.fields[plan.answers.question_1].value, 'No');
+  assert.equal(plan.facts.fields[plan.answers.question_2].value, 'No');
+  // Without both confirmed facts the question stays with the applicant.
+  for (const f of [facts(true, false), facts(false, null), { version: 'test', fields: {} }])
+    assert.deepEqual(
+      mapRoutineQuestions([scale], role(1), f, policy, now).blocked.map((b) => b.key),
+      ['question_1'],
+    );
+});

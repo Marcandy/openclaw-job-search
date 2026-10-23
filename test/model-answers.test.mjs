@@ -299,3 +299,21 @@ test('a mismatched closing bracket is repaired instead of losing the reply', () 
     ],
   });
 });
+
+test('choice checkboxes reach the model; lone checkboxes and Unicode-hyphen legal terms do not', async () => {
+  const { modelEligible } = await import('../lib/model-answers.mjs');
+  const questions = [
+    { key: 'travel', label: 'Are you open to travel?', type: 'checkbox', options: ['Yes', 'No'] },
+    { key: 'agree', label: 'I agree', type: 'checkbox', options: ['I agree'] },
+    { key: 'nc', label: 'Do you have a non‑compete?', type: 'text', options: [] },
+  ];
+  const blocked = questions.map((q) => ({
+    key: q.key,
+    label: q.label.replace(/[‐-―]/g, '-'),
+    reason: 'unknown_fact_or_control',
+  }));
+  assert.deepEqual(
+    modelEligible(blocked, questions).map((q) => q.key),
+    ['travel'],
+  );
+});
