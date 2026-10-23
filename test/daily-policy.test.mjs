@@ -746,3 +746,35 @@ test('a required pronouns question is declined like other demographic questions'
   );
   assert.equal(optional.answers[pronouns.key], undefined);
 });
+
+test("pronouns use the applicant's confirmed answer when one is on file", () => {
+  const pronouns = {
+    key: 'question_1',
+    label: 'Pronouns',
+    required: true,
+    type: 'combobox',
+    kind: 'fact',
+    options: ['He/him/his', 'She/her/hers', 'They/them/theirs', 'I prefer not to say'],
+  };
+  const f = {
+    version: 'test',
+    fields: {
+      pronouns: {
+        value: 'he/him',
+        source: 'confirmed',
+        confirmedAt: now.toISOString(),
+        uses: ['application'],
+      },
+    },
+  };
+  const choice = mapRoutineQuestions([pronouns], role(1), f, policy, now);
+  assert.equal(choice.facts.fields[choice.answers.question_1].value, 'He/him/his');
+  const text = mapRoutineQuestions(
+    [{ ...pronouns, type: 'text', options: [], required: false }],
+    role(1),
+    f,
+    policy,
+    now,
+  );
+  assert.equal(text.facts.fields[text.answers.question_1].value, 'he/him');
+});
