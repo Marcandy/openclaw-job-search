@@ -557,8 +557,8 @@
       "id": "denver",
       "label": "Denver, CO",
       "state": "CO",
-      "dailyQuota": 1,
-      "minBackups": 2,
+      "dailyQuota": 0,
+      "minBackups": 0,
       "acceptedLocationAliases": [
         "Denver, CO",
         "Denver CO",
