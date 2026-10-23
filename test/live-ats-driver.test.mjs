@@ -320,3 +320,47 @@ test('an Ashby multiple-choice question ticks the approved option, not the first
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('an explicit Ashby refusal after Submit releases the slot at once', async () => {
+  const browser = await chromium.launch({ headless: true }),
+    context = await browser.newContext(),
+    dir = mkdtempSync(join(tmpdir(), 'daily-ats-'));
+  const bytes = Buffer.from('synthetic PDF bytes');
+  const d = {
+    company: 'Example',
+    title: 'Software Engineer',
+    source: 'ashby',
+    url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000003',
+    resumePath: 'C:\\private\\Resume.pdf',
+    resumeHash: createHash('sha256').update(bytes).digest('hex'),
+  };
+  await context.route('**/*', (r) =>
+    r.request().method() === 'POST'
+      ? r.fulfill({ body: '{}' })
+      : r.fulfill({
+          contentType: 'text/html',
+          body: `<h1>Software Engineer</h1><form><div data-field-path="_systemfield_name"><label for="_systemfield_name">Name</label><input id="_systemfield_name" required></div><label for="_systemfield_resume">Resume</label><input type="file" id="_systemfield_resume" required><span id="filename"></span><button type="submit">Submit Application</button></form><script>document.querySelector('#_systemfield_resume').onchange=e=>document.querySelector('#filename').textContent=e.target.files[0].name;document.querySelector('form').onsubmit=async e=>{e.preventDefault();await fetch('/api/application',{method:'POST'});document.querySelector('form').remove();document.body.insertAdjacentHTML('beforeend','<div role="alert"><p>We couldn&#39;t submit your application</p><p>Example has set specific limits on how often and how many roles you can apply for.</p></div>');};</script>`,
+        }),
+  );
+  const driver = await liveAtsDriver({ context, receiptDir: dir, location: {}, headless: true });
+  try {
+    await driver.preflight(d);
+    await driver.fill(d, { _systemfield_name: 'Example Applicant' }, bytes);
+    const started = Date.now();
+    await assert.rejects(driver.submit(d), (error) => {
+      assert.match(error.message, /ATS refused the application/);
+      assert.equal(error.rejectedBeforeDelivery, true);
+      assert.equal(error.evidence.writeRequestObserved, true);
+      assert.match(error.evidence.atsRefusal, /limits on how often/);
+      return true;
+    });
+    assert.ok(
+      Date.now() - started < 15000,
+      'the refusal is recognized without waiting out the timeout',
+    );
+  } finally {
+    await driver.closePosting();
+    await browser.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
