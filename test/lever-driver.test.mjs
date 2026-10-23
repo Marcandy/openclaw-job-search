@@ -29,14 +29,20 @@ test('Lever inventories nested required questions, fills native controls and acc
     ${question('Full name', '<input name="name" required>')}
     ${question('Email', '<input type="email" name="email" required>')}
     ${question('Resume/CV', '<input type="file" name="resume"><span id="filename"></span>')}
-    ${question('Current location', '<input name="location"><input id="selected-location" type="hidden"><div class="dropdown-results"><div>New York, NY, USA</div></div>')}
+    ${question('Current location', '<input name="location"><input id="selected-location" type="hidden"><div class="dropdown-results"></div>')}
     ${question('Are you authorized to work in the United States?', '<select name="cards[work][field0]"><option></option><option>Yes</option><option>No</option></select>')}
     ${question('Will you require sponsorship?', '<label><input type="radio" name="cards[sponsor][field0]" value="yes">Yes</label><label><input type="radio" name="cards[sponsor][field0]" value="no">No</label>')}
     ${question('What project did you lead?', '<textarea name="cards[project][field0]"></textarea>')}
     </ul><button type="button" id="btn-submit">Submit application</button></form>
     <script>
       document.querySelector('[name=resume]').onchange = event => document.querySelector('#filename').textContent = event.target.files[0].name;
-      document.querySelector('.dropdown-results div').onclick = () => { document.querySelector('[name=location]').value='New York, NY, USA';document.querySelector('#selected-location').value='verified-place'; };
+      // Like Lever, suggestions appear only after key presses, never for a pasted value.
+      document.querySelector('[name=location]').onkeyup = event => {
+        const results = document.querySelector('.dropdown-results');
+        results.innerHTML = event.target.value === 'New York' ? '<div>New York, NY, USA</div>' : '';
+        const option = results.querySelector('div');
+        if (option) option.onclick = () => { document.querySelector('[name=location]').value='New York, NY, USA';document.querySelector('#selected-location').value='verified-place'; };
+      };
       document.querySelector('#btn-submit').onclick = () => { document.querySelector('form').remove();document.body.insertAdjacentHTML('beforeend','<h2>Application submitted!</h2>'); };
     </script>`,
     }),
