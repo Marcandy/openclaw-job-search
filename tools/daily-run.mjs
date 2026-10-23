@@ -407,6 +407,9 @@ try {
         : [];
     let researchBatches = 0;
     const companyCap = runtime.config.autonomous?.maxApplicationsPerCompanyPerDay ?? 2;
+    // Employers whose ATS refused an application this run (for example a limit on
+    // how many roles one person may apply to); their other roles would be refused too.
+    const refusedEmployers = new Set();
     async function candidates() {
       const admitCompany = belowCompanyCap(store, policy.timezone, companyCap);
       // The funnel records why each discovered role did not reach the pool, so
@@ -418,6 +421,8 @@ try {
           if (!policy.allowedCityIds.includes(r.cityId)) return skip('outside_allowed_cities');
           if (store.get(applicationId(r.url))) return skip('already_applied_or_held');
           if (!admitCompany(r)) return skip('company_daily_cap');
+          if (refusedEmployers.has(normalizeCompany(r.company)))
+            return skip('employer_refused_applications');
           const entry = profiles.get(normalizeCompany(r.company));
           if (!entry) return skip('no_company_profile');
           const role = { ...r, companyProfile: entry.profile };
@@ -690,6 +695,7 @@ try {
             modelAnswers,
           });
         } catch (e) {
+          if (e.atsRefusal) refusedEmployers.add(normalizeCompany(role.company));
           if (id) {
             store.transition(id, runId, startedSubmit ? 'uncertain' : 'blocked', {
               reason: e.message,
