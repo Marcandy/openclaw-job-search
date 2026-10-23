@@ -1598,3 +1598,21 @@ test('poolHash is order-independent and changes when a destination changes', () 
   assert.equal(a, b, 'hash must be stable under reordering');
   assert.notEqual(a, c, 'substituting a destination must change the hash');
 });
+
+test('sales, developer-relations, demo and acoustics titles are rejected', async () => {
+  const { checkTitle } = await import('../lib/role-filter.mjs');
+  const { readJson } = await import('../lib/runtime.mjs');
+  const config = readJson(new URL('../campaign.config.json', import.meta.url));
+  for (const title of [
+    'Developer Advocate - Volcano',
+    'Demo Engineer',
+    'Acoustics Engineer, Capacity Delivery',
+    'Forward Deployed Engineer (Enterprise Sales)',
+    'Sales Engineer - Commercial',
+    'GTM Engineer',
+    'Implementation Engineer, Customer Support',
+  ])
+    assert.equal(checkTitle(title, config).ok, false, title);
+  for (const title of ['Software Engineer', 'Software Engineer II, Fullstack (Ads Platform)'])
+    assert.equal(checkTitle(title, config).ok, true, title);
+});

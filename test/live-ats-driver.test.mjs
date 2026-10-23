@@ -364,3 +364,12 @@ test('an explicit Ashby refusal after Submit releases the slot at once', async (
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('the same web address written differently counts as the same link', async () => {
+  const { sameLink } = await import('../lib/live-ats-driver.mjs');
+  assert.equal(sameLink('github.com/marcandy', 'https://github.com/marcandy'), true);
+  assert.equal(sameLink('https://www.GitHub.com/marcandy/', 'https://github.com/marcandy'), true);
+  assert.equal(sameLink('github.com/someone-else', 'https://github.com/marcandy'), false);
+  assert.equal(sameLink('Example Applicant', 'Example Applicant '), false);
+  assert.equal(sameLink('', ''), false);
+});

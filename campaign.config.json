@@ -640,7 +640,11 @@
       "support engineer",
       "sales engineer",
       "solutions engineer",
-      "customer success"
+      "customer success",
+      "customer support",
+      "demo engineer",
+      "enterprise sales",
+      "acoustics"
     ],
     "note": "Matched case-insensitively on word boundaries against the exact posted title. Any match is a hard reject with no override."
   },
