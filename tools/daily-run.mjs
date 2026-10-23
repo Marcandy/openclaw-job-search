@@ -32,6 +32,7 @@ import {
   verifyResearchedProfile,
 } from '../lib/daily-discovery.mjs';
 import { liveAtsDriver } from '../lib/live-ats-driver.mjs';
+import { browserEvidenceReader } from '../lib/browser-evidence.mjs';
 import { runReplacementQueue } from '../lib/replacement-queue.mjs';
 import { bump, rankFactGaps } from '../lib/run-insights.mjs';
 import { resumeTitleMismatches } from '../lib/resume-title.mjs';
@@ -219,6 +220,9 @@ async function modelAssist(plan, questions, role, facts) {
 const UNREADABLE_SOURCES =
   'linkedin.com, wellfound.com, glassdoor.com, crunchbase.com, zoominfo.com, pitchbook.com, axios.com, and investor-relations PDFs on q4cdn.com';
 
+// One headless browser for company evidence, opened only when a source needs it.
+const evidenceBrowser = browserEvidenceReader();
+
 async function researchProfiles(companies) {
   if (!companies.length) return [];
   const accepted = [];
@@ -277,7 +281,7 @@ async function researchRound(companies, retryNote) {
     const target = byName.get(normalizeCompany(item.company));
     if (!target) continue;
     try {
-      accepted.push(await verifyResearchedProfile(item, { store }));
+      accepted.push(await verifyResearchedProfile(item, { store, browser: evidenceBrowser }));
     } catch (e) {
       failures.push({ target, reason: e.message, source: item.profile?.headcountSourceUrl });
     }
@@ -774,6 +778,7 @@ try {
 } finally {
   clearInterval(timer);
   if (driver) await driver.close();
+  await evidenceBrowser.close().catch(() => {});
   if (runId) {
     try {
       store.finishRun(runId, 'Daily controller stopped with recorded outcomes');
