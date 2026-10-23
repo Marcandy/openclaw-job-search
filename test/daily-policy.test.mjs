@@ -653,3 +653,128 @@ test('a team stated as "around 70 people" counts as a headcount excerpt', async 
   const verified = await verifyResearchedProfile(item, { fetcher, now });
   assert.equal(verified.company, 'Hark');
 });
+
+test('a where-will-you-work choice follows the role, and the remote city comes from its own fact', () => {
+  const field = (value) => ({
+    value,
+    source: 'confirmed',
+    confirmedAt: now.toISOString(),
+    uses: ['application'],
+  });
+  const f = { version: 'test', fields: { remoteWorkLocation: field('Newark, NJ') } };
+  const where = {
+    key: 'San Francisco (Hybrid)',
+    label: 'From where do you intend to work?',
+    required: true,
+    type: 'checkbox',
+    kind: 'fact',
+    grouped: true,
+    options: ['San Francisco (Hybrid)', 'New York City (Hybrid)', 'Remote - US'],
+  };
+  const city = {
+    key: 'question_1',
+    label: 'If Remote, what city/state will you be working from?',
+    required: true,
+    type: 'text',
+    kind: 'fact',
+  };
+  const remote = mapRoutineQuestions(
+    [where, city],
+    { ...role(1), cityId: 'us-remote', location: 'Remote, United States' },
+    f,
+    policy,
+    now,
+  );
+  assert.deepEqual(remote.blocked, []);
+  assert.equal(remote.facts.fields[remote.answers[where.key]].value, 'Remote - US');
+  assert.equal(remote.answers[city.key], 'remoteWorkLocation');
+
+  const onsite = mapRoutineQuestions(
+    [where],
+    { ...role(2), cityId: 'newark', location: 'New York City, NY' },
+    f,
+    policy,
+    now,
+  );
+  assert.equal(onsite.facts.fields[onsite.answers[where.key]].value, 'New York City (Hybrid)');
+
+  // No matching option, or more than one, stays blocked for the applicant.
+  const elsewhere = mapRoutineQuestions(
+    [where],
+    { ...role(3), cityId: 'chicago', location: 'Chicago, IL' },
+    f,
+    policy,
+    now,
+  );
+  assert.deepEqual(
+    elsewhere.blocked.map((b) => b.key),
+    [where.key],
+  );
+});
+
+test('a required pronouns question is declined like other demographic questions', () => {
+  const pronouns = {
+    key: 'question_33021799003',
+    label: 'Pronouns',
+    required: true,
+    type: 'combobox',
+    kind: 'fact',
+    options: [
+      'He/him/his',
+      'She/her/hers',
+      'They/them/theirs',
+      'My pronouns are not listed',
+      'I prefer not to say',
+      'I prefer to self describe',
+    ],
+  };
+  const plan = mapRoutineQuestions(
+    [pronouns],
+    role(1),
+    { version: 'test', fields: {} },
+    policy,
+    now,
+  );
+  assert.deepEqual(plan.blocked, []);
+  assert.equal(plan.facts.fields[plan.answers[pronouns.key]].value, 'I prefer not to say');
+  const optional = mapRoutineQuestions(
+    [{ ...pronouns, required: false }],
+    role(1),
+    { version: 'test', fields: {} },
+    policy,
+    now,
+  );
+  assert.equal(optional.answers[pronouns.key], undefined);
+});
+
+test("pronouns use the applicant's confirmed answer when one is on file", () => {
+  const pronouns = {
+    key: 'question_1',
+    label: 'Pronouns',
+    required: true,
+    type: 'combobox',
+    kind: 'fact',
+    options: ['He/him/his', 'She/her/hers', 'They/them/theirs', 'I prefer not to say'],
+  };
+  const f = {
+    version: 'test',
+    fields: {
+      pronouns: {
+        value: 'he/him',
+        source: 'confirmed',
+        confirmedAt: now.toISOString(),
+        uses: ['application'],
+      },
+    },
+  };
+  const choice = mapRoutineQuestions([pronouns], role(1), f, policy, now);
+  assert.equal(choice.facts.fields[choice.answers.question_1].value, 'He/him/his');
+  const text = mapRoutineQuestions(
+    [{ ...pronouns, type: 'text', options: [], required: false }],
+    role(1),
+    f,
+    policy,
+    now,
+  );
+  assert.equal(text.facts.fields[text.answers.question_1].value, 'he/him');
+});
