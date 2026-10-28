@@ -45,7 +45,10 @@ import {
   applyModelAnswers,
   retryTransient,
   modelForAttempt,
+  buildAnswerReviewPrompt,
+  reviewSupportedAnswers,
 } from '../lib/model-answers.mjs';
+import { readAnswerContext, contextForRole } from '../lib/answer-context.mjs';
 import { desktopNotify } from '../lib/notify.mjs';
 import {
   codeWaitBudget,
@@ -188,6 +191,9 @@ async function askOpenClaw(
 // Required questions the routine rules left open get one model turn. Only
 // validated answers are used; everything else stays blocked.
 const resumeTexts = new Map();
+const approvedAnswerContext = policy.answerContextPath
+  ? readAnswerContext(policy.answerContextPath)
+  : { version: 1, entries: [] };
 async function modelAssist(plan, questions, role, facts) {
   const eligible = modelEligible(plan.blocked, questions);
   if (!policy.modelAnswers?.enabled || !eligible.length) return null;
@@ -197,7 +203,11 @@ async function modelAssist(plan, questions, role, facts) {
   }
   const resumeText = resumeTexts.get(role.resumePath);
   const request = join(dayDir, 'form-answers-' + Date.now() + '.txt');
-  writeFileSync(request, buildAnswerPrompt({ role, questions: eligible, facts, resumeText }));
+  const answerContext = contextForRole(approvedAnswerContext, role);
+  writeFileSync(
+    request,
+    buildAnswerPrompt({ role, questions: eligible, facts, resumeText, answerContext }),
+  );
   // A rate-limited model is retried on the fallback model, then again after a wait.
   const reply = parseModelReply(
     await retryTransient(
@@ -211,7 +221,47 @@ async function modelAssist(plan, questions, role, facts) {
       { delaysMs: MODEL_RETRY_DELAYS },
     ),
   );
-  const { accepted, rejected } = validateModelAnswers(eligible, reply, facts, resumeText);
+  const validation = validateModelAnswers(eligible, reply, facts, resumeText, answerContext);
+  const drafted = validation.accepted.filter((a) =>
+    ['resume', 'prior', 'inference', 'honest_negative'].includes(a.basis),
+  );
+  let checked = { accepted: [], rejected: [] };
+  if (drafted.length) {
+    const reviewFile = join(dayDir, 'form-answer-review-' + Date.now() + '.txt');
+    writeFileSync(
+      reviewFile,
+      buildAnswerReviewPrompt({ answers: drafted, facts, resumeText, answerContext }),
+    );
+    try {
+      const review = parseModelReply(
+        await retryTransient(
+          (attempt) =>
+            askOpenClaw(reviewFile, {
+              sessionKey: `daily-form-review-${applicationId(role.url)}-${attempt}`,
+              timeoutSeconds: 120,
+              label: 'form-answer-review',
+              model: modelForAttempt(
+                attempt,
+                policy.fallbackModel ?? policy.researchModel,
+                policy.researchModel,
+              ),
+            }),
+          { delaysMs: MODEL_RETRY_DELAYS },
+        ),
+      );
+      checked = reviewSupportedAnswers(drafted, review, resumeText, answerContext);
+    } catch (error) {
+      checked.rejected = drafted.map((a) => ({
+        key: a.key,
+        reason: 'evidence review unavailable: ' + error.message,
+      }));
+    }
+  }
+  const accepted = [
+    ...validation.accepted.filter((a) => !drafted.includes(a)),
+    ...checked.accepted,
+  ];
+  const rejected = [...validation.rejected, ...checked.rejected];
   applyModelAnswers(plan, accepted, role);
   return { accepted, rejected };
 }
