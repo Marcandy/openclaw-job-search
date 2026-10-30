@@ -183,3 +183,100 @@ test('a resident alternative cannot override another citizen-only requirement', 
     /mismatch/,
   );
 });
+
+test('a generic clearance-eligibility requirement is not inferred from work authorization', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  assert.equal(
+    qualifyRole(
+      {
+        title: 'Software Engineer',
+        description: 'Clearance Requirement:\nEligible to obtain a clearance',
+      },
+      {},
+      { fields: { securityClearance: { value: 'None', uses: ['application'] } } },
+    ).ok,
+    false,
+  );
+});
+
+for (const [copy, blocked] of [
+  ['We solve the world?s most complex challenges today.', false],
+  ['Solve this security challenge', true],
+]) {
+  test('challenge gate distinguishes employer prose: ' + copy, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+    const directory = mkdtempSync(join(tmpdir(), 'challenge-copy-'));
+    await context.route('**/*', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: `<h1>Software Engineer</h1><p>${copy}</p><input name="name" required><input type="file">`,
+      }),
+    );
+    const driver = await liveAtsDriver({ context, receiptDir: directory, location: {} });
+    try {
+      const form = await driver.preflight({
+        source: 'ashby',
+        title: 'Software Engineer',
+        url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001',
+      });
+      assert.equal(Boolean(form.blockedReason), blocked);
+    } finally {
+      await driver.closePosting();
+      await browser.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+}
+
+test('direct answers bind to the employer, exact question and explicit consent approval', async () => {
+  const { mapRoutineQuestions, explicitQuestionConsentUse } =
+    await import('../lib/daily-policy.mjs');
+  const label = 'By selecting Yes, I am consenting to the use of AI for evaluating my candidacy.';
+  const q = {
+    key: 'ai',
+    label,
+    kind: 'consent',
+    required: true,
+    type: 'select',
+    options: ['Yes', 'No'],
+  };
+  const f = {
+    value: 'Yes',
+    source: 'Direct user reply',
+    confirmedAt: '2026-10-30T12:00:00Z',
+    uses: ['application', explicitQuestionConsentUse(label)],
+    employer: 'ClickHouse',
+    questionLabel: label,
+  };
+  const run = (fields, company = 'ClickHouse', question = q) =>
+    mapRoutineQuestions([question], { company, url: 'https://example.test/job' }, { fields }, {});
+  const plan = run({ ai: f });
+  assert.equal(plan.blocked.length, 0);
+  assert.equal(plan.facts.fields[plan.answers.ai].value, 'Yes');
+  assert.ok(plan.facts.fields[plan.answers.ai].uses.includes('consent:ai'));
+  assert.equal(run({ ai: f }, 'Other').blocked.length, 1);
+  assert.equal(
+    run({ ai: f }, 'ClickHouse', { ...q, label: label + ' Also consent to marketing.' }).blocked
+      .length,
+    1,
+  );
+  assert.equal(run({ ai: { ...f, uses: ['application'] } }).blocked.length, 1);
+  assert.equal(run({ ai: f, copy: f }).blocked[0].reason, 'ambiguous_explicit_answer');
+  const h = {
+    ...f,
+    value: 'No',
+    employer: 'Affirm',
+    questionLabel: 'Have you previously been employed at Affirm for any length of time?',
+    uses: ['application'],
+  };
+  const history = {
+    key: 'history',
+    label: h.questionLabel,
+    type: 'select',
+    required: true,
+    options: ['Yes', 'No'],
+  };
+  assert.equal(run({ h }, 'Affirm', history).blocked.length, 0);
+  assert.equal(run({ h }, 'Other', history).blocked.length, 1);
+});
