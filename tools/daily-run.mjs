@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { reviewedScopeAllows, requireReviewedPosting } from '../lib/reviewed-scope.mjs';
 import { approvedBlockedRetry } from '../lib/reviewed-retry.mjs';
 import { employerDomains, companyIdentity } from '../lib/company-identity.mjs';
 import { rememberedPreflightFailure, rememberPreflightFailure } from '../lib/preflight-memory.mjs';
@@ -493,6 +494,7 @@ try {
       const pool = discovered.candidates
         .map((r) => {
           if (!policy.allowedCityIds.includes(r.cityId)) return skip('outside_allowed_cities');
+          if (!reviewedScopeAllows(r, policy)) return skip('outside_reviewed_batch_scope');
           if (store.get(applicationId(r.url)) && !approvedBlockedRetry(store, r, policy))
             return skip('already_applied_or_held');
           if (!admitCompany(r)) return skip('company_daily_cap');
@@ -735,6 +737,7 @@ try {
           )
             throw Error(live.blockedReason ?? 'Official posting changed');
           const liveRole = { ...role, description: live.description ?? role.description };
+          requireReviewedPosting(liveRole, policy);
           const qualification = qualifyRole(liveRole, runtime.config, facts);
           const site = checkActualLocation(
             liveRole,
