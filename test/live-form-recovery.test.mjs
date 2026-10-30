@@ -280,3 +280,27 @@ test('direct answers bind to the employer, exact question and explicit consent a
   assert.equal(run({ h }, 'Affirm', history).blocked.length, 0);
   assert.equal(run({ h }, 'Other', history).blocked.length, 1);
 });
+
+test('the current application title can answer a role-selection question, never employment history', async () => {
+  const { mapRoutineQuestions } = await import('../lib/daily-policy.mjs');
+  const destination = {
+    company: 'Example',
+    title: 'Senior Software Engineer',
+    url: 'https://example.test/job',
+  };
+  const q = {
+    key: 'role',
+    label: 'What full time job(s) are you applying for?',
+    required: true,
+    type: 'text',
+  };
+  const run = (question) => mapRoutineQuestions([question], destination, { fields: {} }, {});
+  const plan = run(q);
+  assert.equal(plan.facts.fields[plan.answers.role].value, destination.title);
+  assert.equal(run({ ...q, type: 'select', options: ['Other role'] }).blocked.length, 1);
+  assert.equal(
+    run({ ...q, type: 'select', options: [destination.title, destination.title] }).blocked.length,
+    1,
+  );
+  assert.equal(run({ ...q, label: 'What full time jobs have you held?' }).blocked.length, 1);
+});

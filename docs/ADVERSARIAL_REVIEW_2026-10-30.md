@@ -65,3 +65,5 @@ A direct user reply can now supply an employer-scoped `questionLabel` fact. Mapp
 The challenge detector distinguishes ordinary ?solve the world's most complex challenges? employer copy from an actual security challenge. Existing CAPTCHA and uncertain-delivery fixtures remain intact. Generic ?eligible to obtain a clearance? also blocks when approved clearance eligibility is absent, even when no clearance level is specified.
 
 Follow-up validation: **325 tests passed, zero failures or skips** (about 88 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-followup-release-tests.log`.
+
+Role-selection follow-up: an exact current-position question may use the approved destination title. Offered choices must contain exactly one matching title; another position, duplicate choices, and employment-history wording remain blocked. **326 tests passed, zero failures or skips**, with formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-role-selection-release-tests.log`.
