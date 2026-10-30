@@ -275,3 +275,21 @@ test('currently living in the U.S. is answered from confirmed home country', () 
   assert.equal(plan.blocked.length, 0);
   assert.equal(plan.facts.fields[plan.answers.resident].value, 'Yes');
 });
+
+test('a differently phrased role-interest question uses the approved application draft', () => {
+  const plan = mapRoutineQuestions(
+    [
+      {
+        key: 'interest',
+        label: 'What has you interested in this role at Example?',
+        required: true,
+        type: 'textarea',
+      },
+    ],
+    { company: 'Example', title: 'Software Engineer', url: 'https://example.test/job' },
+    { fields: {} },
+    { applicationIntro: 'I build React and Python applications.' },
+  );
+  assert.equal(plan.blocked.length, 0);
+  assert.match(plan.facts.fields[plan.answers.interest].value, /React and Python/);
+});

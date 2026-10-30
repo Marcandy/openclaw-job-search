@@ -394,3 +394,28 @@ test('physical instrumentation and propulsion work cannot borrow software words 
     true,
   );
 });
+
+test('automated tests do not establish software qualifications for a domain test engineer', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  assert.equal(
+    qualifyRole({
+      title: 'Senior Test Engineer',
+      description: 'Develop automated tests for new propulsion products.',
+    }).ok,
+    false,
+  );
+  assert.equal(
+    qualifyRole({
+      title: 'Motion Planning Engineer',
+      description: 'Build Python software for autonomous navigation.',
+    }).ok,
+    false,
+  );
+  assert.equal(
+    qualifyRole({
+      title: 'Software Test Engineer',
+      description: 'Develop automated tests for Python APIs.',
+    }).ok,
+    true,
+  );
+});
