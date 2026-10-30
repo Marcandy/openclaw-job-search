@@ -183,3 +183,239 @@ test('a resident alternative cannot override another citizen-only requirement', 
     /mismatch/,
   );
 });
+
+test('a generic clearance-eligibility requirement is not inferred from work authorization', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  assert.equal(
+    qualifyRole(
+      {
+        title: 'Software Engineer',
+        description: 'Clearance Requirement:\nEligible to obtain a clearance',
+      },
+      {},
+      { fields: { securityClearance: { value: 'None', uses: ['application'] } } },
+    ).ok,
+    false,
+  );
+});
+
+for (const [copy, blocked] of [
+  ['We solve the world?s most complex challenges today.', false],
+  ['Solve this security challenge', true],
+]) {
+  test('challenge gate distinguishes employer prose: ' + copy, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+    const directory = mkdtempSync(join(tmpdir(), 'challenge-copy-'));
+    await context.route('**/*', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: `<h1>Software Engineer</h1><p>${copy}</p><input name="name" required><input type="file">`,
+      }),
+    );
+    const driver = await liveAtsDriver({ context, receiptDir: directory, location: {} });
+    try {
+      const form = await driver.preflight({
+        source: 'ashby',
+        title: 'Software Engineer',
+        url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001',
+      });
+      assert.equal(Boolean(form.blockedReason), blocked);
+    } finally {
+      await driver.closePosting();
+      await browser.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+}
+
+test('direct answers bind to the employer, exact question and explicit consent approval', async () => {
+  const { mapRoutineQuestions, explicitQuestionConsentUse } =
+    await import('../lib/daily-policy.mjs');
+  const label = 'By selecting Yes, I am consenting to the use of AI for evaluating my candidacy.';
+  const q = {
+    key: 'ai',
+    label,
+    kind: 'consent',
+    required: true,
+    type: 'select',
+    options: ['Yes', 'No'],
+  };
+  const f = {
+    value: 'Yes',
+    source: 'Direct user reply',
+    confirmedAt: '2026-10-30T12:00:00Z',
+    uses: ['application', explicitQuestionConsentUse(label)],
+    employer: 'ClickHouse',
+    questionLabel: label,
+  };
+  const run = (fields, company = 'ClickHouse', question = q) =>
+    mapRoutineQuestions([question], { company, url: 'https://example.test/job' }, { fields }, {});
+  const plan = run({ ai: f });
+  assert.equal(plan.blocked.length, 0);
+  assert.equal(plan.facts.fields[plan.answers.ai].value, 'Yes');
+  assert.ok(plan.facts.fields[plan.answers.ai].uses.includes('consent:ai'));
+  assert.equal(run({ ai: f }, 'Other').blocked.length, 1);
+  assert.equal(
+    run({ ai: f }, 'ClickHouse', { ...q, label: label + ' Also consent to marketing.' }).blocked
+      .length,
+    1,
+  );
+  assert.equal(run({ ai: { ...f, uses: ['application'] } }).blocked.length, 1);
+  assert.equal(run({ ai: f, copy: f }).blocked[0].reason, 'ambiguous_explicit_answer');
+  const h = {
+    ...f,
+    value: 'No',
+    employer: 'Affirm',
+    questionLabel: 'Have you previously been employed at Affirm for any length of time?',
+    uses: ['application'],
+  };
+  const history = {
+    key: 'history',
+    label: h.questionLabel,
+    type: 'select',
+    required: true,
+    options: ['Yes', 'No'],
+  };
+  assert.equal(run({ h }, 'Affirm', history).blocked.length, 0);
+  assert.equal(run({ h }, 'Other', history).blocked.length, 1);
+});
+
+test('the current application title can answer a role-selection question, never employment history', async () => {
+  const { mapRoutineQuestions } = await import('../lib/daily-policy.mjs');
+  const destination = {
+    company: 'Example',
+    title: 'Senior Software Engineer',
+    url: 'https://example.test/job',
+  };
+  const q = {
+    key: 'role',
+    label: 'What full time job(s) are you applying for?',
+    required: true,
+    type: 'text',
+  };
+  const run = (question) => mapRoutineQuestions([question], destination, { fields: {} }, {});
+  const plan = run(q);
+  assert.equal(plan.facts.fields[plan.answers.role].value, destination.title);
+  assert.equal(run({ ...q, type: 'select', options: ['Other role'] }).blocked.length, 1);
+  assert.equal(
+    run({ ...q, type: 'select', options: [destination.title, destination.title] }).blocked.length,
+    1,
+  );
+  assert.equal(run({ ...q, label: 'What full time jobs have you held?' }).blocked.length, 1);
+});
+
+test('Lever and Greenhouse preflight read one exact requisition rather than the entire board', async () => {
+  for (const platform of ['lever', 'greenhouse']) {
+    const id = platform === 'lever' ? '00000000-0000-0000-0000-000000000001' : '123';
+    const url =
+      platform === 'lever'
+        ? `https://jobs.lever.co/example/${id}`
+        : `https://job-boards.greenhouse.io/example/jobs/${id}`;
+    const raw =
+      platform === 'lever'
+        ? {
+            id,
+            text: 'Software Engineer',
+            hostedUrl: url,
+            description: '<p>Build Python APIs.</p>',
+          }
+        : {
+            id: 123,
+            title: 'Software Engineer',
+            absolute_url: url,
+            content: '&lt;p&gt;Build Python APIs.&lt;/p&gt;',
+          };
+    const calls = [];
+    const fetcher = async (endpoint) => {
+      calls.push(endpoint);
+      return { ok: true, json: async () => raw };
+    };
+    const result = await readOfficialPosting(
+      { source: platform, company: 'Example', url },
+      fetcher,
+    );
+    assert.match(result.description, /Build Python APIs/);
+    const wrongDestination =
+      platform === 'lever'
+        ? { ...raw, hostedUrl: url.replace('/example/', '/other/') }
+        : { ...raw, absolute_url: url.replace('/example/', '/other/') };
+    await assert.rejects(
+      () =>
+        readOfficialPosting({ source: platform, company: 'Example', url }, async () => ({
+          ok: true,
+          json: async () => wrongDestination,
+        })),
+      /mismatch/,
+    );
+
+    assert.equal(calls.length, 1);
+    assert.match(calls[0], new RegExp('/' + id + '(?:\\?|$)'));
+    await assert.rejects(
+      () =>
+        readOfficialPosting({ source: platform, company: 'Example', url }, async () => ({
+          ok: true,
+          json: async () => ({ ...raw, id: 'wrong' }),
+        })),
+      /identity mismatch/,
+    );
+  }
+});
+
+test('physical instrumentation and propulsion work cannot borrow software words from adjacent clauses', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  for (const role of [
+    {
+      title: 'Instrumentation Engineer',
+      description:
+        'What You?ll Get to Do\nInstall and troubleshoot test instrumentation systems\nCommunicate with the software team to coordinate automated testing.\nWhat You Have\nSensor wiring and electrical test experience required.',
+    },
+    {
+      title: 'Principal GNC Engineer',
+      description: 'Design flight controls, collaborate with flight software developers.',
+    },
+    {
+      title: 'Senior Test Engineer',
+      description:
+        'What You?ll Get to Do\nFabricate wiring harnesses for propulsion test rigs.\nRequirements\nPython familiarity preferred.',
+    },
+    {
+      title: 'Systems Engineer',
+      description: 'Inspect and test instrumentation systems\nCommunicate with the software team.',
+    },
+  ])
+    assert.equal(qualifyRole(role).ok, false, role.title);
+  assert.equal(
+    qualifyRole({
+      title: 'Software Engineer, Observability Instrumentation',
+      description:
+        'What You?ll Get to Do\nDevelop Python web applications and React interfaces.\nWhat You Have\nSoftware engineering experience.',
+    }).ok,
+    true,
+  );
+});
+
+test('automated tests do not establish software qualifications for a domain test engineer', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  assert.equal(
+    qualifyRole({
+      title: 'Senior Test Engineer',
+      description: 'Develop automated tests for new propulsion products.',
+    }).ok,
+    false,
+  );
+  assert.equal(
+    qualifyRole({
+      title: 'Motion Planning Engineer',
+      description: 'Build Python software for autonomous navigation.',
+    }).ok,
+    false,
+  );
+  assert.equal(
+    qualifyRole({
+      title: 'Software Test Engineer',
+      description: 'Develop automated tests for Python APIs.',
+    }).ok,
+    true,
+  );
+});

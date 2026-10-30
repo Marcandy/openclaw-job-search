@@ -32,6 +32,7 @@ test('Lever inventories nested required questions, fills native controls and acc
     ${question('Current location', '<input name="location"><input id="selected-location" type="hidden"><div class="dropdown-results"></div>')}
     ${question('Are you authorized to work in the United States?', '<select name="cards[work][field0]"><option></option><option>Yes</option><option>No</option></select>')}
     ${question('Will you require sponsorship?', '<label><input type="radio" name="cards[sponsor][field0]" value="yes">Yes</label><label><input type="radio" name="cards[sponsor][field0]" value="no">No</label>')}
+    ${question('Prior experience (select one supported option)', '<label><input type="checkbox" name="cards[skills][field0]" checked>Unsupported specialty</label><label><input type="checkbox" name="cards[skills][field0]">Fullstack development</label>')}
     ${question('What project did you lead?', '<textarea name="cards[project][field0]"></textarea>')}
     </ul><button type="button" id="btn-submit">Submit application</button></form>
     <script>
@@ -70,9 +71,16 @@ test('Lever inventories nested required questions, fills native controls and acc
         'cards[work][field0]': 'Yes',
         'cards[sponsor][field0]': 'No',
         'cards[project][field0]': 'Approved project description.',
+        'cards[skills][field0]': 'Fullstack development',
       },
       bytes,
     );
+    const boxes = context.pages()[0].locator('input[type=checkbox]');
+    assert.equal(await boxes.nth(0).isChecked(), false);
+    assert.equal(await boxes.nth(1).isChecked(), true);
+    await boxes.nth(0).check();
+    await assert.rejects(() => driver.inspect(destination), /Final Lever choice mismatch/);
+    await boxes.nth(0).uncheck();
     assert.deepEqual((await driver.inspect(destination)).questions, inventory.questions);
     const receipt = await driver.submit(destination);
     assert.equal(receipt.kind, 'ats_confirmation');
@@ -81,5 +89,27 @@ test('Lever inventories nested required questions, fills native controls and acc
     await driver.closePosting();
     await browser.close();
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('Lever refuses duplicate choice labels and duplicate non-choice names', async () => {
+  const { fillLever } = await import('../lib/lever-fields.mjs');
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  try {
+    await page.setContent(
+      '<label><input type="checkbox" name="skills">Python</label><label><input type="checkbox" name="skills">Python</label>',
+    );
+    await assert.rejects(
+      () => fillLever(page, { skills: 'Python' }, {}),
+      /Ambiguous or missing Lever/,
+    );
+    await page.setContent('<input name="email"><input name="email">');
+    await assert.rejects(
+      () => fillLever(page, { email: 'synthetic@example.test' }, {}),
+      /Ambiguous Lever field/,
+    );
+  } finally {
+    await browser.close();
   }
 });

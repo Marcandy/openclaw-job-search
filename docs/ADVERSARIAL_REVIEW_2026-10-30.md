@@ -56,3 +56,33 @@ Further adversarial cases refuse duplicate or conflicting requisition parameters
 The live batch is separate from test validation. Its receipts, blocks, private policies, and traces remain outside this repository. The recurring scheduler and standing grant have not been replaced. A one-off continuation must pin the tested recovery source, preserve the shared event database and uncertain holds, and count employer acceptance rather than attempts. Anonymous form recognition does not prove successful live delivery.
 
 Recovery validation: **321 tests passed, zero failed, zero skipped** (about 84 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-form-recovery-release.log`.
+
+
+## Explicit follow-up answers and challenge wording
+
+A direct user reply can now supply an employer-scoped `questionLabel` fact. Mapping requires the same employer, exact normalized question, one approved fact, and an offered value. Consent additionally requires `explicitQuestionConsentUse(label)` and creates only the specific live control's consent use. Regression cases reject a different employer, changed or expanded consent, missing approval, and ambiguous duplicate facts. Personal answers remain private; no answer values are committed.
+
+The challenge detector distinguishes ordinary ?solve the world's most complex challenges? employer copy from an actual security challenge. Existing CAPTCHA and uncertain-delivery fixtures remain intact. Generic ?eligible to obtain a clearance? also blocks when approved clearance eligibility is absent, even when no clearance level is specified.
+
+Follow-up validation: **325 tests passed, zero failures or skips** (about 88 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-followup-release-tests.log`.
+
+Role-selection follow-up: an exact current-position question may use the approved destination title. Offered choices must contain exactly one matching title; another position, duplicate choices, and employment-history wording remain blocked. **326 tests passed, zero failures or skips**, with formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-role-selection-release-tests.log`.
+
+
+The public posting reader now uses the exact Lever/Greenhouse requisition endpoint rather than fetching the entire employer board for each preflight. This reduces repeated network work without using cached duties or weakening identity checks. Tests refuse a mismatched API ID and another employer's hosted destination. All 13 focused recovery tests passed; anonymous reads returned the exact Shield AI and SeatGeek titles and descriptions. The preceding full suite had 326 passing tests; the new endpoint regression brings the CI corpus to 327. The active worker's source was not edited during this change.
+
+
+## Second live role-family review
+
+The instrumentation failure revealed a second way to borrow software evidence: the word ?test? in one physical-hardware bullet matched ?software? in the following bullet. Another GNC duty mentioned collaboration with flight-software developers. Neither establishes a match for the applicant's software background. Clause-bounded duties, additional physical wiring/test-rig objects, and specific instrumentation/GNC/propulsion/flight-test engineer title phrases close these cases. Observability instrumentation in an actual software-engineer title remains eligible. The controller also checks revoked or changed authorization before queue replenishment, avoiding further research after an intentional stop.
+
+The affected live requisition was blocked before submission. The one-off grant was revoked; four observed deliveries remain recorded, and no new uncertainty was created. A full local run passed **328 tests**, followed by focused validation of the narrower title phrases. One preceding hosted Windows CI run timed out starting the PDF extraction worker; Linux passed. CI now runs test files serially per operating system to limit browser/PDF worker contention, retaining the production timeout and every assertion. Both OS jobs remain enabled.
+
+
+## Company identity and reviewed Lever recovery
+
+The live researcher attached Reply.io sales-automation headcount and product news to the unrelated Reply consulting ATS board. The required-field gate blocked every attempted form; the one-off grant was revoked before any Reply delivery. New dynamic research now needs an operator-verified employer domain and provenance in the private board registry. Third-party headcount evidence must corroborate that domain beside its size excerpt, and a primary growth source must share the domain. Model-reported size cannot waive this identity requirement. Cached unbound research is not admitted or allowed to replace pinned seed evidence. Tests reject Reply.io/Reply confusion, lookalike domains, missing/conflicting provenance and missing identity under relaxed size rules. This is an identity guard for the native autonomous path, not universal legal-entity verification or a retroactive audit of user-pinned seed profiles.
+
+The Osmind failure selected the first checkbox sharing a group name instead of the approved full-stack label. Exact unique accessible labels now bind Lever radio and checkbox groups; final verification refuses extra or changed checked choices. Duplicate plain fields also refuse positional binding. A controlled retry seals the exact pre-submit block proof in the private batch grant. A submitted, attempted or uncertain history cannot use it. Tests cover the complete discovery duplicate gate and event-history proof; existing holds are not released.
+
+Additional tests distinguish generic physical/domain test engineering from Software Test Engineer, and a routine differently phrased role-interest question uses the existing approved application draft. **338 tests passed with zero failures or skips** (about 82 seconds); formatting and whitespace checks passed. Final local log: `%TEMP%/openclaw-recovery-identity-release.log`. All submission fixtures remain synthetic. The live total at this checkpoint was four confirmed deliveries with no new uncertainty.
