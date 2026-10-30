@@ -45,3 +45,14 @@ Completion: **311 tests passed, zero failed, zero skipped** in the final full ru
 - Stagehand, Crawlee and a full browser-agent replacement remain optional experiments. These fixes use existing Playwright, SQLite and validation dependencies; no new production dependency was required.
 
 This work is isolated from the scheduled checkout. To roll it out, select the reviewed code deliberately, preserve the private configuration/facts/resume bytes and event database, renew the pinned deployment/policy identity, and verify the existing scheduler's command readback. Do not start applications merely to test deployment or replay an uncertain destination. The current live scheduler continues to use the previous code until that rollout is performed.
+
+
+## Recovery after the first authorized live pass
+
+The first October 30 batch confirmed zero submissions and created no new uncertain delivery. Its failures exposed three gaps beyond synthetic fixtures: SeatGeek redirects hosted links to a careers wrapper, Render nests an idless combobox outside its field-path container, and Ashby's application tab omits the job duties. The recovery routes custom Greenhouse links to the exact official embedded requisition, retains parent field identity, selects and verifies an exact offered Ashby option, and reads duties from the exact public ATS API job. Anonymous checks recognized SeatGeek's 16 questions and Render's 13 questions, including all 13 actual source options. No applicant data was entered during those checks.
+
+Further adversarial cases refuse duplicate or conflicting requisition parameters and board traversal. An explicit lawful-permanent-resident alternative is allowed only from the approved applicant fact; a separate citizen-only clause still blocks it. Duties sections exclude unrelated company boilerplate, and RF/EMC/antenna/LTE validation role families remain excluded. Current U.S. residence uses the confirmed home country. Site search fields outside the actual application form are excluded.
+
+The live batch is separate from test validation. Its receipts, blocks, private policies, and traces remain outside this repository. The recurring scheduler and standing grant have not been replaced. A one-off continuation must pin the tested recovery source, preserve the shared event database and uncertain holds, and count employer acceptance rather than attempts. Anonymous form recognition does not prove successful live delivery.
+
+Recovery validation: **321 tests passed, zero failed, zero skipped** (about 84 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-form-recovery-release.log`.

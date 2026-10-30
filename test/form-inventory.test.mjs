@@ -222,3 +222,27 @@ test('a semantic field cannot change its control type after approval', async () 
     await assert.rejects(semanticField(page, key), /type changed/);
   });
 });
+
+test('Ashby idless nested fieldsets retain the enclosing stable question path', async () => {
+  await withForm(
+    '<div data-field-path="question-path"><fieldset><label for="missing-id" class="required">How did you hear about Render?</label><input role="combobox" aria-expanded="false"></fieldset></div>',
+    async (page) => {
+      const result = await inspectApplicationForm(page);
+      assert.equal(result.questions[0].key, 'question-path');
+      assert.equal(result.questions[0].label, 'How did you hear about Render?');
+    },
+  );
+});
+
+test('application inventory excludes unrelated site-search controls', async () => {
+  await withForm(
+    '<header><label>Search events<input required></label></header><form><label for="name">Name</label><input id="name" required><input type="file" id="resume"></form>',
+    async (page) => {
+      const result = await inspectApplicationForm(page);
+      assert.deepEqual(
+        result.questions.map((q) => q.key),
+        ['name', 'resume'],
+      );
+    },
+  );
+});

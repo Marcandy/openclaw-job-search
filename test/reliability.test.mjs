@@ -96,7 +96,7 @@ test('custom employer URLs resolve from the trusted Greenhouse identity; aliases
   const board = { platform: 'greenhouse', slug: 'seatgeek' };
   assert.equal(
     officialApplicationUrl(board, '8332432', 'https://seatgeek.com/jobs/8332432?gh_jid=8332432'),
-    'https://job-boards.greenhouse.io/seatgeek/jobs/8332432',
+    'https://job-boards.greenhouse.io/embed/job_app?for=seatgeek&token=8332432',
   );
   assert.throws(
     () => officialApplicationUrl(board, '2', 'https://job-boards.greenhouse.io/other/jobs/2'),
@@ -255,4 +255,23 @@ test('current targeting keeps Staff/Manager/Director bans without the superseded
   );
   assert.deepEqual(ranking.reasons.matchedSkills, ['react', 'typescript']);
   assert.equal(ranking.kind, 'heuristic_not_probability');
+});
+
+test('currently living in the U.S. is answered from confirmed home country', () => {
+  const plan = mapRoutineQuestions(
+    [
+      {
+        key: 'resident',
+        label: 'Are you currently living in the United States?',
+        required: true,
+        type: 'select',
+        options: ['Yes', 'No'],
+      },
+    ],
+    { company: 'Example', url: 'https://example.test/job' },
+    { fields: { homeCountry: { value: 'United States', uses: ['application'] } } },
+    {},
+  );
+  assert.equal(plan.blocked.length, 0);
+  assert.equal(plan.facts.fields[plan.answers.resident].value, 'Yes');
 });

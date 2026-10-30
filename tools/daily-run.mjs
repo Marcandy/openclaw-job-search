@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { rememberedPreflightFailure, rememberPreflightFailure } from '../lib/preflight-memory.mjs';
+import { readOfficialPosting } from '../lib/official-posting.mjs';
 import { campaignDeadline, requireTime, batchProgress } from '../lib/run-budget.mjs';
 import { qualifyRole, checkActualLocation } from '../lib/role-qualification.mjs';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -633,6 +634,7 @@ try {
       headless,
       authorizationDeadline,
       traceFailures: true,
+      postingReader: readOfficialPosting,
       beforeSubmit: () => {
         requireTime(authorizationDeadline);
         reverify();
