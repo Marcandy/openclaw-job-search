@@ -1,10 +1,20 @@
 {
   "campaign": "newark-sanjose-chicago-3-2-2",
-  "version": 10,
+  "version": 12,
   "timezone": "America/New_York",
   "supersedes": "newark-san-jose-3x2",
   "description": "Twelve-market FullStack developer campaign. Daily quotas: 3 Newark/Jersey City NJ corridor, 2 San Jose CA, 5 Chicago IL, 2 Atlanta GA, and 1 each in San Diego CA, Sacramento CA, Washington DC, Houston TX, Baltimore MD, St. Louis MO, Wilmington DE, and Philadelphia PA. The campaign id string was kept as-is for backward compatibility with the existing ledger/state history. Ranking hard-prefers thriving small and midsize companies that are not household names.",
   "versionHistory": [
+    {
+      "version": 12,
+      "date": "2026-10-28",
+      "change": "User instruction October 28, 2026: removed staff, manager, and director. These three titles are excluded; the previously removed required-years cutoff stays removed and other suitable developer levels remain allowed. Four-per-company/newest-to-oldest changes are separate batch-only scope."
+    },
+    {
+      "version": 11,
+      "date": "2026-10-28",
+      "change": "User instruction 2026-10-28: update the configuration to accept any roles that match my 10 years of experience, even more than 10+ years or less like 2 years of experience. Update the configurations."
+    },
     {
       "version": 10,
       "date": "2026-10-19",
@@ -88,17 +98,36 @@
       "dailyQuota": 1,
       "minBackups": 2,
       "acceptedLocationAliases": [
-        "St. Louis, MO", "St Louis, MO", "Saint Louis, MO",
-        "St. Louis, Missouri", "St Louis, Missouri", "Saint Louis, Missouri",
-        "US-MO-St. Louis", "US-MO-St Louis", "US-MO-Saint Louis",
-        "MO - St. Louis", "MO - St Louis", "MO - Saint Louis"
+        "St. Louis, MO",
+        "St Louis, MO",
+        "Saint Louis, MO",
+        "St. Louis, Missouri",
+        "St Louis, Missouri",
+        "Saint Louis, Missouri",
+        "US-MO-St. Louis",
+        "US-MO-St Louis",
+        "US-MO-Saint Louis",
+        "MO - St. Louis",
+        "MO - St Louis",
+        "MO - Saint Louis"
       ],
       "excludedLocationPatterns": [
-        "east st. louis", "east st louis", "east saint louis",
-        "bay st. louis", "bay st louis", "bay saint louis",
-        "st. louis county", "st louis county", "saint louis county"
+        "east st. louis",
+        "east st louis",
+        "east saint louis",
+        "bay st. louis",
+        "bay st louis",
+        "bay saint louis",
+        "st. louis county",
+        "st louis county",
+        "saint louis county"
       ],
-      "commuteAliases": ["Clayton, MO", "Chesterfield, MO", "St. Charles, MO", "East St. Louis, IL"],
+      "commuteAliases": [
+        "Clayton, MO",
+        "Chesterfield, MO",
+        "St. Charles, MO",
+        "East St. Louis, IL"
+      ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
         "primaryHeadcountMax": 5000,
@@ -118,20 +147,34 @@
       "dailyQuota": 1,
       "minBackups": 2,
       "acceptedLocationAliases": [
-        "Philadelphia, PA", "Philadelphia PA", "Philadelphia, Pennsylvania", "Philadelphia Pennsylvania",
-        "US-PA-Philadelphia", "PA - Philadelphia", "Philadelphia, PA, USA"
+        "Philadelphia, PA",
+        "Philadelphia PA",
+        "Philadelphia, Pennsylvania",
+        "Philadelphia Pennsylvania",
+        "US-PA-Philadelphia",
+        "PA - Philadelphia",
+        "Philadelphia, PA, USA"
       ],
       "excludedLocationPatterns": [
         "new philadelphia",
-        "philadelphia, ms", "philadelphia, mississippi",
-        "philadelphia, ny", "philadelphia, new york",
-        "philadelphia, tn", "philadelphia, tennessee",
-        "greater philadelphia", "philadelphia metro"
+        "philadelphia, ms",
+        "philadelphia, mississippi",
+        "philadelphia, ny",
+        "philadelphia, new york",
+        "philadelphia, tn",
+        "philadelphia, tennessee",
+        "greater philadelphia",
+        "philadelphia metro"
       ],
       "excludedLocationNote": "New Philadelphia (OH and PA) and Philadelphia in Mississippi, New York and Tennessee are separate municipalities. Metro labels cover the Pennsylvania and New Jersey suburbs, not the city.",
       "commuteAliases": [
-        "King of Prussia, PA", "Conshohocken, PA", "Wayne, PA", "Malvern, PA",
-        "Bala Cynwyd, PA", "Camden, NJ", "Cherry Hill, NJ"
+        "King of Prussia, PA",
+        "Conshohocken, PA",
+        "Wayne, PA",
+        "Malvern, PA",
+        "Bala Cynwyd, PA",
+        "Camden, NJ",
+        "Cherry Hill, NJ"
       ],
       "commuteAliasesAllowed": false,
       "companyProfileOverride": {
@@ -204,7 +247,7 @@
         "New York, NY"
       ],
       "commuteAliasesAllowed": false,
-      "notes": "The corridor now covers Newark, East Newark, Jersey City, Harrison, and Hoboken \u2014 these are accepted outright. The commuteAliases above remain OFF: New York, NY in particular must never satisfy this quota, since a 15-mile sweep from Newark returns 158 Manhattan roles that would otherwise swamp the corridor. Record an unmet quota rather than widening further.",
+      "notes": "The corridor now covers Newark, East Newark, Jersey City, Harrison, and Hoboken — these are accepted outright. The commuteAliases above remain OFF: New York, NY in particular must never satisfy this quota, since a 15-mile sweep from Newark returns 158 Manhattan roles that would otherwise swamp the corridor. Record an unmet quota rather than widening further.",
       "companyProfileOverride": {
         "primaryHeadcountMax": 30000,
         "rationale": "User instruction 2026-08-17 raised this from 20,000 to 30,000, alongside widening the city to the Newark/Jersey City corridor. The original 2026-08-16 instruction was 'for Newark, headcount should be between 0 and 20000' after three research passes produced zero Newark candidates under the global 1000-person ceiling. This raises the ceiling for the Newark corridor ONLY. San Jose and Chicago remain capped at 1000.",
@@ -213,7 +256,7 @@
           "at least one verified thriving signal with a dated detail and source URL",
           "all title, experience, eligibility, salary, location, source, and blocker gates"
         ],
-        "note": "This raises the SIZE ceiling only. It does not admit household names. Prudential (~40k) and Maximus (~35k) still exceed even 30,000 and are on the deny list besides, so they remain backup-only with an explicit overrideReason. Note that the corridor's large employers \u2014 JPMorgan Chase, Bank of America, Goldman Sachs, AWS \u2014 are all on the household-name deny list and stay barred from primary regardless of this ceiling."
+        "note": "This raises the SIZE ceiling only. It does not admit household names. Prudential (~40k) and Maximus (~35k) still exceed even 30,000 and are on the deny list besides, so they remain backup-only with an explicit overrideReason. Note that the corridor's large employers — JPMorgan Chase, Bank of America, Goldman Sachs, AWS — are all on the household-name deny list and stay barred from primary regardless of this ceiling."
       }
     },
     {
@@ -233,7 +276,7 @@
       ],
       "excludedLocationPatterns": [
         "san jose, costa rica",
-        "san jos\u00e9, costa rica",
+        "san josé, costa rica",
         "san jose del",
         "san jose, philippines"
       ],
@@ -604,21 +647,6 @@
   ],
   "titleFilter": {
     "bannedTokens": [
-      "senior",
-      "sr",
-      "snr",
-      "staff",
-      "principal",
-      "lead",
-      "manager",
-      "director",
-      "vp",
-      "vice president",
-      "chief",
-      "architect",
-      "head of",
-      "distinguished",
-      "fellow",
       "mechanical",
       "electrical",
       "manufacturing",
@@ -639,18 +667,23 @@
       "technical support",
       "support engineer",
       "sales engineer",
-      "solutions engineer",
       "customer success",
       "customer support",
       "demo engineer",
       "enterprise sales",
-      "acoustics"
+      "acoustics",
+      "staff",
+      "manager",
+      "director"
     ],
-    "note": "Matched case-insensitively on word boundaries against the exact posted title. Any match is a hard reject with no override."
+    "note": "User revision October 28: Staff, Manager and Director titles are excluded. Other suitable junior, mid-level, Senior, Principal, Lead and hands-on software-architecture levels are not rejected solely for seniority. Existing non-development domain/title exclusions and actual resume-fit/mandatory-skills checks remain. Solutions Engineer is considered only for real software development, not sales/support."
   },
   "experienceFilter": {
-    "maxAcceptedMinimumYears": 5,
-    "note": "Parse every years-of-experience phrase in the posted description. If the lowest required years value exceeds 5, hard reject. '5+ years' passes; '6+ years', 'at least 7 years', and 'minimum of six years' are rejected."
+    "maxAcceptedMinimumYears": 9007199254740991,
+    "note": "User update 2026-10-28: no fixed required-years cutoff and no lower experience floor. Consider 2+, 5+, 8+, 10+, 12+, 15+ and higher requirements when duties are a reasonable resume match; stretch roles may be considered with truthful ten-year experience. Never claim the applicant has more than ten years. maxAcceptedMinimumYears uses Number.MAX_SAFE_INTEGER solely for compatibility with the current numeric predicate, not as an applicant fact. Mandatory unsupported skills, education, eligibility and non-development duties remain subject to existing checks.",
+    "yearOnlyRejectionDisabled": true,
+    "applicantOverallYears": 10,
+    "selectionMode": "resume-fit-across-experience-levels"
   },
   "roleRelevanceFilter": {
     "enabled": true,
@@ -674,9 +707,13 @@
       "back-end",
       "web development",
       "software development",
-      "sdet"
+      "sdet",
+      "software architect",
+      "technical architect",
+      "tech lead",
+      "technical lead"
     ],
-    "note": "The posted TITLE must contain at least one of these tokens. This is deliberately a positive requirement rather than a deny list: every role type this campaign targets (full-stack, frontend, backend, web/product, AI application, QA automation, Software Engineer I/II) contains one. A generic 'Analyst', 'Specialist', 'Coordinator', 'Technician', 'Administrator', or 'Consultant' title does not, and those have historically been support or configuration roles rather than development. If a genuinely good developer role is ever rejected here, add its token deliberately with a test - do not disable the gate."
+    "note": "Require an actual software-development, engineering or hands-on software-architecture/technical-lead role matching documented skills. Seniority alone is not an exclusion. Generic analyst, sales, support and unrelated hardware roles are not automatically admitted by this update."
   },
   "knownBlockerFilter": {
     "enabled": true,
@@ -708,7 +745,7 @@
       "365 days before reapplying",
       "reapply after"
     ],
-    "note": "Matched case-insensitively against the notes column of ledger rows whose status is 'blocked'. A company with such a row is treated as blocked for ALL future roles, because the question sits on the employer's form rather than on one posting. Role-specific blockers such as a one-off essay prompt are not in this list and do not disqualify a company. To deliberately retry a blocked company, set retryKnownBlocker true on that candidate. Added 2026-09-11: Etched rejected every new Ashby application with a 365-day prior-interview lock after earlier Etched submissions \u2014 company-level, not role-level."
+    "note": "Matched case-insensitively against the notes column of ledger rows whose status is 'blocked'. A company with such a row is treated as blocked for ALL future roles, because the question sits on the employer's form rather than on one posting. Role-specific blockers such as a one-off essay prompt are not in this list and do not disqualify a company. To deliberately retry a blocked company, set retryKnownBlocker true on that candidate. Added 2026-09-11: Etched rejected every new Ashby application with a 365-day prior-interview lock after earlier Etched submissions — company-level, not role-level."
   },
   "eligibilityFilter": {
     "enabled": true,
@@ -1158,7 +1195,7 @@
     "Web or product software engineer",
     "AI application engineer or deployed/forward-deployed engineer",
     "QA automation or software test automation engineer",
-    "Software Engineer I/II, Associate, Junior, and genuinely mid-level roles"
+    "Software developer roles at junior, mid-level, senior, principal, lead or hands-on software-architecture levels matching documented ten-year experience. Exclude Staff, Manager and Director titles. No lower or upper advertised-years cutoff; never invent qualifications."
   ],
   "skills": [
     "React",

@@ -189,3 +189,60 @@ test('fresh-browser public inspection blocks POSTs and external navigation witho
   assert.ok(report.warnings.some((w) => /2 non-read/.test(w)));
   assert.equal(browser.isConnected(), false);
 });
+
+test('semantic labels stay stable on reorder but duplicate labels cannot silently bind', async () => {
+  await withForm(
+    '<label>Source<input required></label><label>Phone<input type="tel"></label>',
+    async (page) => {
+      const first = await inspectApplicationForm(page);
+      const key = first.questions.find((q) => q.label === 'Source').key;
+      assert.ok(key.startsWith('semantic:'));
+      await page.setContent(
+        '<label>Phone<input type="tel"></label><label>Source<input required></label>',
+      );
+      assert.equal(
+        (await inspectApplicationForm(page)).questions.find((q) => q.label === 'Source').key,
+        key,
+      );
+      await page.setContent(
+        '<label>Source<input required></label><label>Source<input required></label>',
+      );
+      assert.ok(
+        (await inspectApplicationForm(page)).warnings.some((w) => /Ambiguous duplicate/.test(w)),
+      );
+    },
+  );
+});
+
+test('a semantic field cannot change its control type after approval', async () => {
+  const { semanticField } = await import('../lib/form-binding.mjs');
+  await withForm('<label>Source<input required></label>', async (page) => {
+    const key = (await inspectApplicationForm(page)).questions[0].key;
+    await page.setContent('<label>Source<input type="checkbox" required></label>');
+    await assert.rejects(semanticField(page, key), /type changed/);
+  });
+});
+
+test('Ashby idless nested fieldsets retain the enclosing stable question path', async () => {
+  await withForm(
+    '<div data-field-path="question-path"><fieldset><label for="missing-id" class="required">How did you hear about Render?</label><input role="combobox" aria-expanded="false"></fieldset></div>',
+    async (page) => {
+      const result = await inspectApplicationForm(page);
+      assert.equal(result.questions[0].key, 'question-path');
+      assert.equal(result.questions[0].label, 'How did you hear about Render?');
+    },
+  );
+});
+
+test('application inventory excludes unrelated site-search controls', async () => {
+  await withForm(
+    '<header><label>Search events<input required></label></header><form><label for="name">Name</label><input id="name" required><input type="file" id="resume"></form>',
+    async (page) => {
+      const result = await inspectApplicationForm(page);
+      assert.deepEqual(
+        result.questions.map((q) => q.key),
+        ['name', 'resume'],
+      );
+    },
+  );
+});

@@ -24,6 +24,8 @@ with a shared daily cap, confirmed-fact answers, replacement candidates and ATS 
 > ledger are all gitignored by design. See `applicant-brief.example.txt`
 > and `resumes/README.md`.
 
+Current targeting, screening, expiry handling and failure memory are described in [Reliability](docs/RELIABILITY.md). The effective private runtime configuration takes precedence over historical examples below.
+
 ## What you get
 
 - **Executable gates, not prose rules** — title, experience, compensation,
@@ -305,9 +307,9 @@ authorized · `2` bad input.
 
 | Gate | Rejects |
 |---|---|
-| `checkTitle` | Senior, Sr., Snr, Staff, Principal, Lead, Manager, Director, VP, Vice President, Chief, Architect, Head of, Distinguished, Fellow |
+| `checkTitle` | Configured non-development exclusions plus Staff, Manager and Director. Suitable Senior/Principal/Lead/software-architecture levels remain allowed. |
 | `checkRoleRelevance` | titles with no engineering token — Analyst, Specialist, Coordinator, Technician, Administrator, Consultant |
-| `checkExperience` | lowest stated minimum > 5 years |
+| `checkExperience` | Configured profile limit; fullstack has no practical required-years cutoff, while apprenticeship retains its dedicated ceiling. |
 | `checkEligibility` | requires current enrollment / student status; internships and co-ops |
 | `checkCompensation` | posted maximum < $90,000 (missing salary caps at backup) |
 | `checkCompanyProfile` | household names and >1000 headcount out of primary; no verified thriving signal |

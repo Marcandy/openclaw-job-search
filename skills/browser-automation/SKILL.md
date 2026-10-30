@@ -36,6 +36,9 @@ Use this skill when you need the `browser` tool for anything beyond a single pag
 
 ## Job application preflight
 
+Read `docs/RELIABILITY.md` and `skills/role-review/SKILL.md` before entering applicant data. An engineering title alone is not qualification. Preserve the controller's expiry, unique control bindings, claims and receipt checks; do not improvise another send after a timeout.
+
+
 For this campaign, read `docs/OPERATIONS.md` and run
 `node tools/inspect-form.mjs <official-ATS-https-url> --out <private-runtime-file>`
 before preparing a submission manifest. Resolve its warnings in the browser.

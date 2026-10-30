@@ -34,6 +34,7 @@ USAGE
 from __future__ import annotations
 
 import argparse
+import re
 import json
 import sys
 import subprocess
@@ -77,11 +78,7 @@ DEFAULT_TERMS = [
 
 # Titles that the downstream gates will reject anyway. Dropping them here just
 # keeps the report readable; it is not a substitute for the real filters.
-OBVIOUS_REJECTS = (
-    "senior", "sr.", "sr ", "staff", "principal", "lead", "manager",
-    "director", "vp ", "vice president", "chief", "architect", "head of",
-    "distinguished", "fellow", "intern", "internship", "co-op",
-)
+OBVIOUS_REJECTS = tuple(CONFIG.get("titleFilter", {}).get("bannedTokens", []))
 
 
 def city_by_id(city_id: str) -> dict:
@@ -93,7 +90,7 @@ def city_by_id(city_id: str) -> dict:
 
 def looks_rejectable(title: str) -> bool:
     t = f" {title.lower()} "
-    return any(bad in t for bad in OBVIOUS_REJECTS)
+    return any(re.search(r"(?<![a-z0-9])" + re.escape(bad) + r"(?![a-z0-9])", t) for bad in OBVIOUS_REJECTS)
 
 
 def clean(value):
