@@ -419,3 +419,29 @@ test('automated tests do not establish software qualifications for a domain test
     true,
   );
 });
+
+test('mandatory React Native experience is distinct from React web experience', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  const config = { skills: ['React', 'TypeScript', 'Python'] };
+  assert.equal(
+    qualifyRole(
+      {
+        title: 'Senior Software Engineer',
+        description:
+          'Requirements: Proficiency in mobile frameworks and programming languages - React Native primarily.',
+      },
+      config,
+    ).ok,
+    false,
+  );
+  assert.equal(
+    qualifyRole(
+      {
+        title: 'Fullstack Software Engineer',
+        description: 'Build React web applications. React Native familiarity is a plus.',
+      },
+      config,
+    ).ok,
+    true,
+  );
+});
