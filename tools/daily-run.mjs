@@ -661,6 +661,12 @@ try {
       candidates,
       replenish,
       shouldStop: (attempted) => {
+        try {
+          reverify();
+        } catch (error) {
+          report.authorizationError = error.message;
+          return 'authorization_changed';
+        }
         if (Date.now() >= authorizationDeadline) return 'authorization_expired';
         if (Date.now() + 90000 >= authorizationDeadline) return 'authorization_expiring';
         if (Date.now() - started > 70 * 60000) return 'run_time_limit';

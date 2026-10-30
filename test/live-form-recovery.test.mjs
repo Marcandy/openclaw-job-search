@@ -361,3 +361,36 @@ test('Lever and Greenhouse preflight read one exact requisition rather than the 
     );
   }
 });
+
+test('physical instrumentation and propulsion work cannot borrow software words from adjacent clauses', async () => {
+  const { qualifyRole } = await import('../lib/role-qualification.mjs');
+  for (const role of [
+    {
+      title: 'Instrumentation Engineer',
+      description:
+        'What You?ll Get to Do\nInstall and troubleshoot test instrumentation systems\nCommunicate with the software team to coordinate automated testing.\nWhat You Have\nSensor wiring and electrical test experience required.',
+    },
+    {
+      title: 'Principal GNC Engineer',
+      description: 'Design flight controls, collaborate with flight software developers.',
+    },
+    {
+      title: 'Senior Test Engineer',
+      description:
+        'What You?ll Get to Do\nFabricate wiring harnesses for propulsion test rigs.\nRequirements\nPython familiarity preferred.',
+    },
+    {
+      title: 'Systems Engineer',
+      description: 'Inspect and test instrumentation systems\nCommunicate with the software team.',
+    },
+  ])
+    assert.equal(qualifyRole(role).ok, false, role.title);
+  assert.equal(
+    qualifyRole({
+      title: 'Software Engineer, Observability Instrumentation',
+      description:
+        'What You?ll Get to Do\nDevelop Python web applications and React interfaces.\nWhat You Have\nSoftware engineering experience.',
+    }).ok,
+    true,
+  );
+});

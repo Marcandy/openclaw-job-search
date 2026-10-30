@@ -70,3 +70,10 @@ Role-selection follow-up: an exact current-position question may use the approve
 
 
 The public posting reader now uses the exact Lever/Greenhouse requisition endpoint rather than fetching the entire employer board for each preflight. This reduces repeated network work without using cached duties or weakening identity checks. Tests refuse a mismatched API ID and another employer's hosted destination. All 13 focused recovery tests passed; anonymous reads returned the exact Shield AI and SeatGeek titles and descriptions. The preceding full suite had 326 passing tests; the new endpoint regression brings the CI corpus to 327. The active worker's source was not edited during this change.
+
+
+## Second live role-family review
+
+The instrumentation failure revealed a second way to borrow software evidence: the word ?test? in one physical-hardware bullet matched ?software? in the following bullet. Another GNC duty mentioned collaboration with flight-software developers. Neither establishes a match for the applicant's software background. Clause-bounded duties, additional physical wiring/test-rig objects, and specific instrumentation/GNC/propulsion/flight-test engineer title phrases close these cases. Observability instrumentation in an actual software-engineer title remains eligible. The controller also checks revoked or changed authorization before queue replenishment, avoiding further research after an intentional stop.
+
+The affected live requisition was blocked before submission. The one-off grant was revoked; four observed deliveries remain recorded, and no new uncertainty was created. A full local run passed **328 tests**, followed by focused validation of the narrower title phrases. One preceding hosted Windows CI run timed out starting the PDF extraction worker; Linux passed. CI now runs test files serially per operating system to limit browser/PDF worker contention, retaining the production timeout and every assertion. Both OS jobs remain enabled.
