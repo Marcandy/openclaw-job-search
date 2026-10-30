@@ -70,3 +70,54 @@ test('empty, duplicate, unsealed or malformed reviewed scopes refuse authorizati
     /sealed batch/,
   );
 });
+
+test('reviewed discovery reads exact jobs without a full-board scan or cache deletion', async () => {
+  const { discoverDaily } = await import('../lib/daily-discovery.mjs');
+  const { EventStore } = await import('../lib/event-store.mjs');
+  const { cacheBoard } = await import('../lib/board-discovery.mjs');
+  const { readJson } = await import('../lib/runtime.mjs');
+  const config = readJson(new URL('../campaign.config.json', import.meta.url));
+  const store = new EventStore(':memory:');
+  const board = { platform: 'greenhouse', slug: 'example', company: 'Example' };
+  const url = 'https://job-boards.greenhouse.io/example/jobs/123';
+  try {
+    cacheBoard(store, board, [
+      {
+        postingId: 'greenhouse:example:999',
+        url: 'https://job-boards.greenhouse.io/example/jobs/999',
+        title: 'Other role',
+      },
+    ]);
+    const calls = [];
+    const fetcher = async (endpoint) => {
+      calls.push(endpoint);
+      if (!endpoint.includes('/jobs/123?')) throw Error('Unexpected full-board read');
+      return {
+        ok: true,
+        json: async () => ({
+          id: 123,
+          title: 'Software Engineer',
+          absolute_url: url,
+          location: { name: 'Chicago, IL' },
+          first_published: new Date().toISOString(),
+          content: 'Build React TypeScript software and Python APIs using PostgreSQL and AWS.',
+        }),
+      };
+    };
+    const result = await discoverDaily(
+      store,
+      config,
+      { boards: [board] },
+      { fetcher, reviewedRetryPolicy: { batch: { reviewedCandidates: [{ url }] } } },
+    );
+    assert.equal(result.candidates.length, 1);
+    assert.equal(calls.length, 1);
+    assert.equal(
+      store.db.prepare('select active from postings where id=?').get('greenhouse:example:999')
+        .active,
+      1,
+    );
+  } finally {
+    store.close();
+  }
+});
