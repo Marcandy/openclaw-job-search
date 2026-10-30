@@ -88,3 +88,12 @@ The Osmind failure selected the first checkbox sharing a group name instead of t
 Additional tests distinguish generic physical/domain test engineering from Software Test Engineer, and a routine differently phrased role-interest question uses the existing approved application draft. **338 tests passed with zero failures or skips** (about 82 seconds); formatting and whitespace checks passed. Final local log: `%TEMP%/openclaw-recovery-identity-release.log`. All submission fixtures remain synthetic. The live total at this checkpoint was four confirmed deliveries with no new uncertainty.
 
 The final public role review found a mobile-focused Senior Software Engineer requisition requiring React Native. Documented React web experience does not establish React Native experience. A dedicated mandatory-specialty check and positive preferred-only case now cover that distinction. The local full run above remains 338 tests; the additional focused regression brings the final CI corpus to 339. Xsolla, Intercom and Greenlight were reviewed anonymously without sending applicant data in those checks.
+
+
+## Reviewed scope and resume-upload recovery
+
+A one-off batch can now seal exact official requisitions and their normalized title/description hashes. Changed content or an unreviewed destination blocks before resume upload. Reviewed Greenhouse and Lever reads use individual requisition endpoints; partial reads never mark the employer's remaining cached jobs inactive. These controls preserve the other qualification, company, location, permission and duplicate gates.
+
+Lever renders uploaded filenames in uppercase through CSS. Checking rendered body text against the original filename caused false upload timeouts. Verification now checks the selected file, raw visible filename and completion of visible parsing progress. Hidden progress labels do not block a completed upload. Regression cases cover transformed text, nested progress labels and incomplete uploads.
+
+Final validation: **344 tests passed, zero failures or skips**. Local log: `%TEMP%/openclaw-final-344-fixed-tests.log`. Live delivery remains separate: later Lever submission timeouts created conservative uncertainty holds. Neither an uploaded resume nor a submit click proves employer acceptance. Those destinations must remain held until independent receipt evidence resolves them. The recurring deployment remains unchanged.
