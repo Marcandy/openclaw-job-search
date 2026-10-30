@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { rememberedPreflightFailure, rememberPreflightFailure } from '../lib/preflight-memory.mjs';
+import { campaignDeadline, requireTime, batchProgress } from '../lib/run-budget.mjs';
+import { qualifyRole, checkActualLocation } from '../lib/role-qualification.mjs';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -86,6 +89,10 @@ const report = {
 const reportPath = join(dayDir, 'run-' + Date.now() + '-report.json'),
   latestPath = join(runtime.root, 'daily-latest.json');
 function checkpoint() {
+  report.batchProgress = batchProgress(
+    report.results,
+    policy.batch?.maxAdditionalDeliveries ?? policy.dailyLimit,
+  );
   report.updatedAt = new Date().toISOString();
   atomicJson(reportPath, report);
   atomicJson(join(dayDir, 'report.json'), report);
@@ -425,6 +432,7 @@ try {
     const started = Date.now(),
       registry = readJson(runtime.config.paths.boards);
     const discovered = await discoverDaily(store, runtime.config, registry, {
+      facts: readJson(runtime.config.paths.facts),
       onProgress: (p) => {
         report.discovery = p;
         checkpoint();
@@ -471,6 +479,8 @@ try {
           if (!policy.allowedCityIds.includes(r.cityId)) return skip('outside_allowed_cities');
           if (store.get(applicationId(r.url))) return skip('already_applied_or_held');
           if (!admitCompany(r)) return skip('company_daily_cap');
+          if (rememberedPreflightFailure(store, r, policy))
+            return skip('unchanged_preflight_failure');
           if (refusedEmployers.has(normalizeCompany(r.company)))
             return skip('employer_refused_applications');
           const entry = profiles.get(normalizeCompany(r.company));
@@ -526,7 +536,11 @@ try {
         store.db
           .prepare('SELECT * FROM daily_research_attempts')
           .all()
-          .filter((r) => Date.now() - Date.parse(r.attempted_at) < 7 * 86400000)
+          .filter(
+            (r) =>
+              Date.now() - Date.parse(r.attempted_at) <
+              Math.max(1, runtime.config.autonomous?.researchRetryCooldownHours ?? 6) * 3600000,
+          )
           .map((r) => r.company),
       );
       // Research the employers holding the most eligible roles first, in small
@@ -563,7 +577,7 @@ try {
               ? 'household_name'
               : profiles.has(name)
                 ? 'already_profiled'
-                : 'researched_within_7_days',
+                : 'research_retry_cooldown',
           );
         report.researchSkipped = { reason: 'no_unresearched_employers', employers };
         return false;
@@ -600,6 +614,8 @@ try {
     checkpoint();
     // Greenhouse's emailed code: wait for the applicant at a visible browser
     // when the policy allows it; otherwise the posting goes to the manual list.
+    const authorizationDeadline = campaignDeadline(policy);
+    let finalAuthorization = null;
     const headless = runtime.config.autonomous?.headless ?? false,
       codeRule = policy.verificationCodeEntry;
     const codeBudget =
@@ -607,7 +623,7 @@ try {
         ? codeWaitBudget({
             maxWaitMs: (codeRule.maxWaitMinutes ?? 10) * 60000,
             totalWaitMs: (codeRule.maxRunWaitMinutes ?? 20) * 60000,
-            deadline: () => started + 75 * 60000,
+            deadline: () => Math.min(started + 75 * 60000, authorizationDeadline),
           })
         : null;
     driver = await liveAtsDriver({
@@ -615,6 +631,19 @@ try {
       receiptDir: join(dayDir, runId, 'receipts'),
       location: policy.location,
       headless,
+      authorizationDeadline,
+      traceFailures: true,
+      beforeSubmit: () => {
+        requireTime(authorizationDeadline);
+        reverify();
+        if (!finalAuthorization) throw Error('No current destination authorization');
+        finalAuthorization();
+      },
+      progress: (current) => {
+        report.current = current;
+        report.status = current.phase;
+        checkpoint();
+      },
       codeEntry: codeBudget && {
         ...codeBudget,
         notify: (d, ms) =>
@@ -630,6 +659,8 @@ try {
       candidates,
       replenish,
       shouldStop: (attempted) => {
+        if (Date.now() >= authorizationDeadline) return 'authorization_expired';
+        if (Date.now() + 90000 >= authorizationDeadline) return 'authorization_expiring';
         if (Date.now() - started > 70 * 60000) return 'run_time_limit';
         if (args.includes('--preflight-only'))
           return attempted >= maxPreflight ? 'preflight_limit' : false;
@@ -638,6 +669,7 @@ try {
           : false;
       },
       attempt: async (role) => {
+        let attemptSucceeded = false;
         let id,
           modelAnswers,
           startedSubmit = false,
@@ -645,6 +677,10 @@ try {
           plan,
           filled;
         try {
+          report.current = { phase: 'preflight', company: role.company, title: role.title };
+          report.status = 'applying';
+          checkpoint();
+          requireTime(authorizationDeadline, 90000);
           reverify();
           if (!policy.resumes[role.resumePath])
             throw Error('Resume not covered by standing policy');
@@ -655,6 +691,13 @@ try {
             live.blockedReason
           )
             throw Error(live.blockedReason ?? 'Official posting changed');
+          const liveRole = { ...role, description: live.description ?? role.description };
+          const qualification = qualifyRole(liveRole, runtime.config, facts);
+          const site = checkActualLocation(
+            liveRole,
+            runtime.config.cities.find((c) => c.id === role.cityId),
+          );
+          if (!qualification.ok || !site.ok) throw Error(qualification.reason ?? site.reason);
           plan = mapRoutineQuestions(live.questions, role, facts, policy);
           if (plan.blocked.length) {
             try {
@@ -668,6 +711,7 @@ try {
               blocked: plan.blocked,
             });
           if (args.includes('--preflight-only')) {
+            attemptSucceeded = true;
             report.results.push({
               company: role.company,
               title: role.title,
@@ -713,6 +757,18 @@ try {
           );
           store.transition(id, runId, 'filling');
           filled = answerQuestions(live.questions, d, plan.facts).answers;
+          finalAuthorization = () => {
+            verifyManifestAuthorization(state, subRuntime);
+            const current = store.get(id);
+            if (
+              !current ||
+              current.run_id !== runId ||
+              !['filling', 'submit_started'].includes(current.state)
+            )
+              throw Error('Destination claim changed before final submit');
+            const usage = dailyUsage(store, policy.timezone);
+            if (usage.occupied > policy.dailyLimit) throw Error('Daily capacity exceeded');
+          };
           await driver.fill(d, filled, readFileSync(d.resumePath));
           const final = await driver.inspect(d),
             finalPlan = answerQuestions(final.questions, d, plan.facts);
@@ -736,6 +792,7 @@ try {
             standingPolicyHash: policy.hash,
             manifestHash: state.authorization.manifestHash,
           });
+          attemptSucceeded = true;
           report.results.push({
             company: role.company,
             title: role.title,
@@ -745,6 +802,11 @@ try {
             modelAnswers,
           });
         } catch (e) {
+          if (
+            !id &&
+            !/authorization|policy|resume|capacity|claim|code\/config changed/i.test(e.message)
+          )
+            rememberPreflightFailure(store, role, policy, e.message);
           if (e.atsRefusal) refusedEmployers.add(normalizeCompany(role.company));
           if (id) {
             store.transition(id, runId, startedSubmit ? 'uncertain' : 'blocked', {
@@ -792,7 +854,9 @@ try {
             evidence: e.evidence,
           });
         } finally {
-          await driver.closePosting();
+          finalAuthorization = null;
+          report.current = null;
+          await driver.closePosting({ failed: !attemptSucceeded });
           report.final = dailyUsage(store, policy.timezone);
           checkpoint();
         }
@@ -809,9 +873,17 @@ try {
       );
     report.researchBatches = researchBatches;
     report.final = dailyUsage(store, policy.timezone);
+    report.batchProgress = batchProgress(
+      report.results,
+      policy.batch?.maxAdditionalDeliveries ?? policy.dailyLimit,
+    );
     report.status = args.includes('--preflight-only')
       ? 'preflight_complete'
-      : report.final.confirmed >= policy.dailyLimit
+      : (
+            policy.batch
+              ? batchProgress(report.results, policy.batch.maxAdditionalDeliveries).remaining === 0
+              : report.final.confirmed >= policy.dailyLimit
+          )
         ? 'quota_met'
         : report.final.uncertain
           ? 'shortfall_with_held_delivery'
@@ -834,6 +906,8 @@ try {
         target: policy.dailyLimit,
         ...report.final,
         reportPath,
+        batchProgress: report.batchProgress,
+        stopReason: report.stopReason,
       }),
     );
     if (report.status.startsWith('shortfall')) process.exitCode = 2;

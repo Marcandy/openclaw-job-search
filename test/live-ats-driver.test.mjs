@@ -373,3 +373,42 @@ test('the same web address written differently counts as the same link', async (
   assert.equal(sameLink('Example Applicant', 'Example Applicant '), false);
   assert.equal(sameLink('', ''), false);
 });
+
+test('an idless accessible source field is bound uniquely and checked; revoked submit never clicks', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext();
+  const dir = mkdtempSync(join(tmpdir(), 'semantic-control-'));
+  const bytes = Buffer.from('synthetic');
+  const d = {
+    source: 'ashby',
+    title: 'Software Engineer',
+    url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001',
+    resumePath: 'Resume.pdf',
+    resumeHash: createHash('sha256').update(bytes).digest('hex'),
+  };
+  await context.route('**/*', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: `<h1>Software Engineer</h1><form><label>How did you hear about us?<input required></label><input type="file" id="_systemfield_resume"><span id="filename"></span><button type="submit">Submit Application</button></form><script>document.querySelector('input[type=file]').onchange=e=>document.querySelector('#filename').textContent=e.target.files[0].name;document.querySelector('form').onsubmit=e=>{e.preventDefault();window.sent=true}</script>`,
+    }),
+  );
+  const driver = await liveAtsDriver({
+    context,
+    receiptDir: dir,
+    location: {},
+    beforeSubmit: () => {
+      throw Error('Revoked policy');
+    },
+  });
+  try {
+    const form = await driver.preflight(d);
+    const key = form.questions.find((q) => q.label === 'How did you hear about us?').key;
+    assert.ok(key.startsWith('semantic:'));
+    await driver.fill(d, { [key]: 'Company website' }, bytes);
+    await assert.rejects(driver.submit(d), /Revoked policy/);
+  } finally {
+    await driver.closePosting();
+    await browser.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

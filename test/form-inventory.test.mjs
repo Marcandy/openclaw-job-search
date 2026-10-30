@@ -189,3 +189,36 @@ test('fresh-browser public inspection blocks POSTs and external navigation witho
   assert.ok(report.warnings.some((w) => /2 non-read/.test(w)));
   assert.equal(browser.isConnected(), false);
 });
+
+test('semantic labels stay stable on reorder but duplicate labels cannot silently bind', async () => {
+  await withForm(
+    '<label>Source<input required></label><label>Phone<input type="tel"></label>',
+    async (page) => {
+      const first = await inspectApplicationForm(page);
+      const key = first.questions.find((q) => q.label === 'Source').key;
+      assert.ok(key.startsWith('semantic:'));
+      await page.setContent(
+        '<label>Phone<input type="tel"></label><label>Source<input required></label>',
+      );
+      assert.equal(
+        (await inspectApplicationForm(page)).questions.find((q) => q.label === 'Source').key,
+        key,
+      );
+      await page.setContent(
+        '<label>Source<input required></label><label>Source<input required></label>',
+      );
+      assert.ok(
+        (await inspectApplicationForm(page)).warnings.some((w) => /Ambiguous duplicate/.test(w)),
+      );
+    },
+  );
+});
+
+test('a semantic field cannot change its control type after approval', async () => {
+  const { semanticField } = await import('../lib/form-binding.mjs');
+  await withForm('<label>Source<input required></label>', async (page) => {
+    const key = (await inspectApplicationForm(page)).questions[0].key;
+    await page.setContent('<label>Source<input type="checkbox" required></label>');
+    await assert.rejects(semanticField(page, key), /type changed/);
+  });
+});

@@ -76,3 +76,65 @@ test('a Greenhouse posting is dated by first_published, never by updated_at', as
   );
   assert.equal(posting.postedDate, '2026-08-19T12:29:00-04:00');
 });
+
+test('Lever creation time is retained without being advertised as publication', async () => {
+  const { normalizePosting } = await import('../lib/board-discovery.mjs');
+  const job = normalizePosting(
+    { platform: 'lever', slug: 'example', company: 'Example' },
+    {
+      id: '123',
+      text: 'Software Engineer',
+      hostedUrl: 'https://jobs.lever.co/example/123',
+      createdAt: Date.parse('2026-10-20T12:00:00Z'),
+      categories: { location: 'Chicago, IL' },
+    },
+  );
+  assert.equal(job.postedDate, null);
+  assert.equal(job.createdAt, '2026-10-20T12:00:00.000Z');
+  assert.equal(job.dateEvidence, 'undated');
+});
+
+test('a custom URL already held cannot reenter through the new hosted application route', async () => {
+  const { discoverDaily } = await import('../lib/daily-discovery.mjs');
+  const { readJson } = await import('../lib/runtime.mjs');
+  const config = readJson(new URL('../campaign.config.json', import.meta.url));
+  const store = new EventStore(':memory:');
+  const source = 'https://seatgeek.com/jobs/123?gh_jid=123';
+  try {
+    store.importLedger([
+      {
+        timestamp: '2026-10-20T12:00:00Z',
+        company: 'SeatGeek',
+        title: 'Old title',
+        location: 'Chicago, IL',
+        url: source,
+        status: 'submitted',
+      },
+    ]);
+    const result = await discoverDaily(
+      store,
+      config,
+      { boards: [{ platform: 'greenhouse', slug: 'seatgeek', company: 'SeatGeek' }] },
+      {
+        fetcher: async () => ({
+          ok: true,
+          json: async () => ({
+            jobs: [
+              {
+                id: 123,
+                title: 'Software Engineer II',
+                location: { name: 'Chicago, IL' },
+                absolute_url: source,
+                content: 'Build React software and APIs.',
+                first_published: new Date().toISOString(),
+              },
+            ],
+          }),
+        }),
+      },
+    );
+    assert.equal(result.candidates.length, 0);
+  } finally {
+    store.close();
+  }
+});

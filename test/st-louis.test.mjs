@@ -38,7 +38,7 @@ test('St. Louis applies the existing title gate', () => {
   const result = evaluateRole(
     {
       company: 'Synthetic',
-      title: 'Senior AI Engineer',
+      title: 'Staff AI Engineer',
       location: city.label,
       description: 'Build AI applications.',
     },
