@@ -56,3 +56,12 @@ Further adversarial cases refuse duplicate or conflicting requisition parameters
 The live batch is separate from test validation. Its receipts, blocks, private policies, and traces remain outside this repository. The recurring scheduler and standing grant have not been replaced. A one-off continuation must pin the tested recovery source, preserve the shared event database and uncertain holds, and count employer acceptance rather than attempts. Anonymous form recognition does not prove successful live delivery.
 
 Recovery validation: **321 tests passed, zero failed, zero skipped** (about 84 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-form-recovery-release.log`.
+
+
+## Explicit follow-up answers and challenge wording
+
+A direct user reply can now supply an employer-scoped `questionLabel` fact. Mapping requires the same employer, exact normalized question, one approved fact, and an offered value. Consent additionally requires `explicitQuestionConsentUse(label)` and creates only the specific live control's consent use. Regression cases reject a different employer, changed or expanded consent, missing approval, and ambiguous duplicate facts. Personal answers remain private; no answer values are committed.
+
+The challenge detector distinguishes ordinary ?solve the world's most complex challenges? employer copy from an actual security challenge. Existing CAPTCHA and uncertain-delivery fixtures remain intact. Generic ?eligible to obtain a clearance? also blocks when approved clearance eligibility is absent, even when no clearance level is specified.
+
+Follow-up validation: **325 tests passed, zero failures or skips** (about 88 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-followup-release-tests.log`.
