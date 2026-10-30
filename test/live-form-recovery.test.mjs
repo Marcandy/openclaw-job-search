@@ -304,3 +304,60 @@ test('the current application title can answer a role-selection question, never 
   );
   assert.equal(run({ ...q, label: 'What full time jobs have you held?' }).blocked.length, 1);
 });
+
+test('Lever and Greenhouse preflight read one exact requisition rather than the entire board', async () => {
+  for (const platform of ['lever', 'greenhouse']) {
+    const id = platform === 'lever' ? '00000000-0000-0000-0000-000000000001' : '123';
+    const url =
+      platform === 'lever'
+        ? `https://jobs.lever.co/example/${id}`
+        : `https://job-boards.greenhouse.io/example/jobs/${id}`;
+    const raw =
+      platform === 'lever'
+        ? {
+            id,
+            text: 'Software Engineer',
+            hostedUrl: url,
+            description: '<p>Build Python APIs.</p>',
+          }
+        : {
+            id: 123,
+            title: 'Software Engineer',
+            absolute_url: url,
+            content: '&lt;p&gt;Build Python APIs.&lt;/p&gt;',
+          };
+    const calls = [];
+    const fetcher = async (endpoint) => {
+      calls.push(endpoint);
+      return { ok: true, json: async () => raw };
+    };
+    const result = await readOfficialPosting(
+      { source: platform, company: 'Example', url },
+      fetcher,
+    );
+    assert.match(result.description, /Build Python APIs/);
+    const wrongDestination =
+      platform === 'lever'
+        ? { ...raw, hostedUrl: url.replace('/example/', '/other/') }
+        : { ...raw, absolute_url: url.replace('/example/', '/other/') };
+    await assert.rejects(
+      () =>
+        readOfficialPosting({ source: platform, company: 'Example', url }, async () => ({
+          ok: true,
+          json: async () => wrongDestination,
+        })),
+      /mismatch/,
+    );
+
+    assert.equal(calls.length, 1);
+    assert.match(calls[0], new RegExp('/' + id + '(?:\\?|$)'));
+    await assert.rejects(
+      () =>
+        readOfficialPosting({ source: platform, company: 'Example', url }, async () => ({
+          ok: true,
+          json: async () => ({ ...raw, id: 'wrong' }),
+        })),
+      /identity mismatch/,
+    );
+  }
+});

@@ -67,3 +67,6 @@ The challenge detector distinguishes ordinary ?solve the world's most complex ch
 Follow-up validation: **325 tests passed, zero failures or skips** (about 88 seconds). Formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-followup-release-tests.log`.
 
 Role-selection follow-up: an exact current-position question may use the approved destination title. Offered choices must contain exactly one matching title; another position, duplicate choices, and employment-history wording remain blocked. **326 tests passed, zero failures or skips**, with formatting and whitespace checks passed. Final log: `%TEMP%/openclaw-role-selection-release-tests.log`.
+
+
+The public posting reader now uses the exact Lever/Greenhouse requisition endpoint rather than fetching the entire employer board for each preflight. This reduces repeated network work without using cached duties or weakening identity checks. Tests refuse a mismatched API ID and another employer's hosted destination. All 13 focused recovery tests passed; anonymous reads returned the exact Shield AI and SeatGeek titles and descriptions. The preceding full suite had 326 passing tests; the new endpoint regression brings the CI corpus to 327. The active worker's source was not edited during this change.
