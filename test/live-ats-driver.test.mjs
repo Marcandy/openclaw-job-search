@@ -412,3 +412,91 @@ test('an idless accessible source field is bound uniquely and checked; revoked s
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+for (const scenario of ['delayed', 'missing', 'ambiguous', 'uncommitted', 'plain-input']) {
+  test(`Ashby location uses only its own list when the option is ${scenario}`, async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const city = 'Example City, United States';
+    const bytes = Buffer.from('synthetic resume');
+    const d = {
+      source: 'ashby',
+      title: 'Software Engineer',
+      url: 'https://jobs.ashbyhq.com/example/00000000-0000-0000-0000-000000000001',
+      resumePath: 'Resume.pdf',
+      resumeHash: createHash('sha256').update(bytes).digest('hex'),
+    };
+    await context.route('**/*', (r) =>
+      r.fulfill({
+        contentType: 'text/html',
+        body: `
+      <h1>Software Engineer</h1><form>
+      <label for="other">Office</label><input id="other" value="Original" role="combobox" aria-controls="offices">
+      <div id="offices" role="listbox"><div role="option" onclick="other.value=this.textContent">${city}</div></div>
+      <label for="_systemfield_location">Location</label>
+      <input id="_systemfield_location" ${scenario === 'plain-input' ? '' : 'role="combobox"'} aria-controls="cities" aria-expanded="false">
+      <div id="cities" role="listbox"><div role="option">Initial option</div></div>
+      <input type="file" id="_systemfield_resume"><span id="filename"></span>
+      <button type="submit">Submit Application</button></form>
+      <script>
+        document.querySelector('form').onsubmit = e => {e.preventDefault(); document.body.dataset.submitted = 'yes'};
+        const target = document.querySelector('#_systemfield_location');
+        document.querySelector('input[type=file]').onchange = e => filename.textContent=e.target.files[0].name;
+        target.oninput = () => {
+          target.setAttribute('aria-expanded','true');
+          cities.replaceChildren();
+          setTimeout(() => {
+            for(let i=0; i<${scenario === 'missing' ? 0 : scenario === 'ambiguous' ? 2 : 1}; i++){
+              const o=document.createElement('div'); o.setAttribute('role','option'); o.textContent='${city}';
+              o.onclick=()=>setTimeout(()=>{
+                ${scenario === 'uncommitted' ? '' : 'target.value=o.textContent;'}
+                target.setAttribute('aria-expanded','false');
+                cities.replaceChildren();
+              }, 100);
+              cities.append(o);
+            }
+          }, 150);
+        };
+      </script>`,
+      }),
+    );
+    const dir = mkdtempSync(join(tmpdir(), 'ashby-location-'));
+    const driver = await liveAtsDriver({
+      receiptDir: dir,
+      context,
+      location: { query: 'Example City', ashby: city },
+    });
+    try {
+      await driver.preflight(d);
+      const page = context.pages()[0];
+      const key = scenario === 'delayed' ? 'ashby_location_combobox' : '_systemfield_location';
+      const fill = driver.fill(d, { [key]: 'Example City' }, bytes);
+      if (scenario === 'delayed') {
+        await fill;
+        assert.equal(await page.locator('#_systemfield_location').inputValue(), city);
+        assert.equal(await page.locator('#other').inputValue(), 'Original');
+        assert.equal(await page.locator('body').getAttribute('data-submitted'), null);
+        await page.locator('#_systemfield_location').evaluate((e) => (e.value = ''));
+        await assert.rejects(driver.submit(d), /Final combobox selection mismatch/);
+      } else {
+        await assert.rejects(
+          fill,
+          scenario === 'missing'
+            ? /Timeout/
+            : scenario === 'ambiguous'
+              ? /strict mode violation/
+              : scenario === 'plain-input'
+                ? /Ashby location control/
+                : /did not commit/,
+        );
+        await assert.rejects(driver.submit(d), /fill incomplete/);
+        assert.equal(await page.locator('#other').inputValue(), 'Original');
+        assert.equal(await page.locator('body').getAttribute('data-submitted'), null);
+      }
+    } finally {
+      await driver.closePosting();
+      await browser.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}

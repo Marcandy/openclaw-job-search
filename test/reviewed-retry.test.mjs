@@ -95,6 +95,7 @@ test('discovery preserves the duplicate gate except for the exact sealed pre-sub
     },
   };
   const registry = { boards: [{ platform: 'greenhouse', slug: 'example', company: 'Example' }] };
+  const publishedAt = new Date().toISOString();
   const fetcher = async () => ({
     ok: true,
     json: async () => ({
@@ -104,7 +105,7 @@ test('discovery preserves the duplicate gate except for the exact sealed pre-sub
           title: role.title,
           absolute_url: role.url,
           location: { name: 'Chicago, IL' },
-          first_published: new Date().toISOString(),
+          first_published: publishedAt,
           content: 'Build React and TypeScript software and Python APIs using PostgreSQL and AWS.',
         },
       ],

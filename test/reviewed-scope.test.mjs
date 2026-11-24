@@ -89,6 +89,7 @@ test('reviewed discovery reads exact jobs without a full-board scan or cache del
       },
     ]);
     const calls = [];
+    const publishedAt = new Date().toISOString();
     const fetcher = async (endpoint) => {
       calls.push(endpoint);
       if (!endpoint.includes('/jobs/123?')) throw Error('Unexpected full-board read');
@@ -99,7 +100,7 @@ test('reviewed discovery reads exact jobs without a full-board scan or cache del
           title: 'Software Engineer',
           absolute_url: url,
           location: { name: 'Chicago, IL' },
-          first_published: new Date().toISOString(),
+          first_published: publishedAt,
           content: 'Build React TypeScript software and Python APIs using PostgreSQL and AWS.',
         }),
       };

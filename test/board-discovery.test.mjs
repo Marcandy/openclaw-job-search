@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventStore } from '../lib/event-store.mjs';
 import { fetchBoard, cacheBoard, boardEndpoint } from '../lib/board-discovery.mjs';
+import { discoverDaily } from '../lib/daily-discovery.mjs';
+import { applyBatchOverrides } from '../lib/application-batch.mjs';
+import { checkSource } from '../lib/role-filter.mjs';
+import { readJson } from '../lib/runtime.mjs';
 const b = { platform: 'greenhouse', slug: 'acme', company: 'Acme' };
 test('seven unchanged daily board snapshots do not repeat enrichment; changes and removals are tracked', async () => {
   const s = new EventStore(':memory:');
@@ -134,6 +138,67 @@ test('a custom URL already held cannot reenter through the new hosted applicatio
       },
     );
     assert.equal(result.candidates.length, 0);
+  } finally {
+    store.close();
+  }
+});
+
+test('normal Greenhouse discovery enforces the rolling age cap and office eligibility', async () => {
+  const config = readJson(new URL('../campaign.config.json', import.meta.url));
+  const registry = { boards: [b] };
+  const url = 'https://job-boards.greenhouse.io/acme/jobs/123';
+  const clock = new Date('2032-03-08T02:00:00Z');
+  const boundary = clock.getTime() - 7 * 86400000;
+  const batch = applyBatchOverrides(config, { maxPostingAgeDays: 7 });
+  batch.cities = [{ id: 'us-remote' }];
+  const jobs = [
+    {},
+    { first_published: new Date(boundary - 1).toISOString() },
+    { first_published: new Date(clock.getTime() + 1).toISOString() },
+    { first_published: undefined, updated_at: clock.toISOString() },
+    { first_published: 'invalid' },
+    { first_published: '2032-02-31T12:00:00Z' },
+    { offices: [{ location: 'London, United Kingdom' }] },
+    { workplaceType: 'Hybrid' },
+    { workplaceType: 'OnSite' },
+  ].map((overrides, i) => ({
+    id: 123 + i,
+    absolute_url: url.replace('123', String(123 + i)),
+    title: 'Software Engineer',
+    location: { name: 'Remote' },
+    offices: [{ location: 'Brooklyn, New York, United States' }],
+    first_published: new Date(boundary).toISOString(),
+    content: 'Build React and Python APIs with PostgreSQL and AWS.',
+    ...overrides,
+  }));
+  const store = new EventStore(':memory:');
+  try {
+    const options = { now: clock, fetcher: async () => Response.json({ jobs }) };
+    const result = await discoverDaily(store, batch, registry, options);
+    assert.deepEqual(result.errors, []);
+    assert.deepEqual(
+      result.candidates.map((j) => j.postingId),
+      ['greenhouse:acme:123'],
+    );
+    assert.equal(
+      checkSource({ ...result.candidates[0], dateEvidence: undefined }, batch, clock).ok,
+      false,
+    );
+
+    const relaxed = {
+      ...batch,
+      sourceFilter: {
+        ...config.sourceFilter,
+        maxPostingAgeDays: 7,
+        allowVerifiedActiveOlderPostings: true,
+      },
+    };
+    const other = await discoverDaily(store, relaxed, registry, options);
+    assert.ok(other.candidates.find((j) => j.postingId.endsWith(':124')));
+    const undated = other.candidates.find((j) => j.postingId.endsWith(':126'));
+    assert.ok(undated);
+    assert.equal(checkSource(undated, relaxed, clock).capBucket, null);
+    assert.ok(!other.candidates.find((j) => j.postingId.endsWith(':125')));
   } finally {
     store.close();
   }
