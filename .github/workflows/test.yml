@@ -27,4 +27,5 @@ jobs:
       - if: runner.os == 'Windows'
         run: npx playwright install chromium
       - run: npm run format:check
-      - run: npm test
+      # Browser and PDF worker startup contend on hosted Windows runners.
+      - run: node --test --test-concurrency=1 test/*.test.mjs
